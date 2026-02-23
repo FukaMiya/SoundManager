@@ -103,6 +103,8 @@ public class Demo : MonoBehaviour
 public class DemoEditor : Editor
 {
     private Demo demo;
+    private float fadeDuration1 = 1f;
+    private float fadeDuration2 = 1f;
 
     private void OnEnable()
     {
@@ -130,13 +132,13 @@ public class DemoEditor : Editor
         GUILayout.Space(10);
 
         GUILayout.Label("Background Music", EditorStyles.boldLabel);
-        float fadeDuration1 = EditorGUILayout.FloatField("Fade Duration", 1f);
+        fadeDuration1 = EditorGUILayout.FloatField("Fade Duration", fadeDuration1);
         if (GUILayout.Button("Switch Bgm1 (with fade)"))
         {
             demo.SwitchBgm1(fadeDuration1);
         }
 
-        float fadeDuration2 = EditorGUILayout.FloatField("Fade Duration", 1f);
+        fadeDuration2 = EditorGUILayout.FloatField("Fade Duration", fadeDuration2);
         if (GUILayout.Button("Switch Bgm2 (with fade)"))
         {
             demo.SwitchBgm2(fadeDuration2);

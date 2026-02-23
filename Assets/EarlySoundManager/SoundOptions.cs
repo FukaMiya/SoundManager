@@ -7,6 +7,7 @@ namespace Early.SoundManager
         public readonly float Volume;
         public readonly float Pitch;
         public readonly bool Spatialize;
+        public readonly Vector3 Position;
         public readonly AudioRolloffMode RolloffMode;
         public readonly float MinDistance;
         public readonly float MaxDistance;
@@ -15,6 +16,7 @@ namespace Early.SoundManager
             float volume = 1.0f,
             float pitch = 1.0f,
             bool spatialize = false,
+            Vector3 position = default,
             AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic,
             float minDistance = 1.0f,
             float maxDistance = 500.0f
@@ -23,6 +25,7 @@ namespace Early.SoundManager
             Volume = volume;
             Pitch = pitch;
             Spatialize = spatialize;
+            Position = position;
             RolloffMode = rolloffMode;
             MinDistance = minDistance;
             MaxDistance = maxDistance;
@@ -32,6 +35,7 @@ namespace Early.SoundManager
             volume: 1.0f,
             pitch: 1.0f,
             spatialize: false,
+            position: default,
             rolloffMode: AudioRolloffMode.Logarithmic,
             minDistance: 1.0f,
             maxDistance: 500.0f

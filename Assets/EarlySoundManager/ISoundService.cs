@@ -10,18 +10,20 @@ namespace Early.SoundManager
         event System.Action OnTicked;
         ISeHandle PlaySe(AudioClip clip);
         ISeHandle PlaySe(AudioClip clip, SoundOptions options);
-        ISeHandle PlaySe(AudioClip clip, SoundOptions options, Vector3 position);
         ISeHandle PlaySe(string key);
         ISeHandle PlaySe(string key, SoundOptions options);
-        ISeHandle PlaySe(string key, SoundOptions options, Vector3 position);
         IBgmHandle PlayBgm(AudioClip clip);
         IBgmHandle PlayBgm(AudioClip clip, SoundOptions options);
         IBgmHandle PlayBgm(string key);
         IBgmHandle PlayBgm(string key, SoundOptions options);
+        IBgmHandle SwitchBgm(AudioClip clip);
         IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options);
-        IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options, SoundFadingOptions crossFadingOptions);
+        IBgmHandle SwitchBgm(AudioClip clip, SoundFadingOptions fadingOptions);
+        IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options, SoundFadingOptions fadingOptions);
+        IBgmHandle SwitchBgm(string key);
         IBgmHandle SwitchBgm(string key, SoundOptions options);
-        IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions crossFadingOptions);
+        IBgmHandle SwitchBgm(string key, SoundFadingOptions fadingOptions);
+        IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions fadingOptions);
     }
 
     public interface ISoundHandle : System.IDisposable

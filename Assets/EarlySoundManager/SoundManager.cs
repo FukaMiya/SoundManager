@@ -17,6 +17,19 @@ namespace Early.SoundManager
         private float targetSwitchStartVolume = 0f;
         private float sourceSwitchEndVolume = 0f;
 
+        public SoundManager()
+        {
+            this.availableAudioSources = new ObjectPool<AudioSource>
+            (
+                createFunc: OnCreatePoolObject,
+                actionOnGet: OnGetFromPool,
+                actionOnRelease: OnReleaseToPool,
+                actionOnDestroy: OnDestroyPoolObject,
+                collectionCheck: true,
+                defaultCapacity: defaultPoolCapacity,
+                maxSize: defaultPoolMaxSize
+            );
+        }
         public SoundManager(SoundRegistory soundRegistory)
         {
             this.soundRegistory = soundRegistory;
@@ -58,15 +71,6 @@ namespace Early.SoundManager
             return handle;
         }
 
-        public ISeHandle PlaySe(AudioClip clip, SoundOptions options, Vector3 position)
-        {
-            var audioSource = PlaySeInternal(GetAvailableAudioSource(), clip, options);
-            audioSource.transform.position = position;
-            var handle = new SeHandle(audioSource, this);
-            handle.OnCompleted += () => availableAudioSources.Release(handle.Release());
-            return handle;
-        }
-
         public ISeHandle PlaySe(string key)
         {
             return PlaySe(key, SoundOptions.Default);
@@ -77,18 +81,6 @@ namespace Early.SoundManager
             if (TryGetAudioClipByKey(key, out var clip))
             {
                 return PlaySe(clip, options);
-            }
-            else
-            {
-                return new SeHandle();
-            }
-        }
-
-        public ISeHandle PlaySe(string key, SoundOptions options, Vector3 position)
-        {
-            if (TryGetAudioClipByKey(key, out var clip))
-            {
-                return PlaySe(clip, options, position);
             }
             else
             {
@@ -130,6 +122,11 @@ namespace Early.SoundManager
             }
         }
 
+        public IBgmHandle SwitchBgm(AudioClip clip)
+        {
+            return SwitchBgm(clip, SoundOptions.Default);
+        }
+
         public IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options)
         {
             if (currentBgm != null && currentBgm.IsValid)
@@ -140,9 +137,14 @@ namespace Early.SoundManager
             return PlayBgm(clip, options);
         }
 
-        public IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options, SoundFadingOptions crossFadingOptions)
+        public IBgmHandle SwitchBgm(AudioClip clip, SoundFadingOptions fadingOptions)
         {
-            if (currentBgm == null || !currentBgm.IsValid || crossFadingOptions.FadeDuration <= 0f)
+            return SwitchBgm(clip, SoundOptions.Default, fadingOptions);
+        }
+
+        public IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options, SoundFadingOptions fadingOptions)
+        {
+            if (currentBgm == null || !currentBgm.IsValid || fadingOptions.FadeDuration <= 0f)
             {
                 return PlayBgm(clip, options);
             }
@@ -154,7 +156,12 @@ namespace Early.SoundManager
                 nextBgm = null;
             }
 
-            return SwitchBgmInternal(GetAvailableAudioSource(), clip, options, crossFadingOptions);
+            return SwitchBgmInternal(GetAvailableAudioSource(), clip, options, fadingOptions);
+        }
+
+        public IBgmHandle SwitchBgm(string key)
+        {
+            return SwitchBgm(key, SoundOptions.Default);
         }
 
         public IBgmHandle SwitchBgm(string key, SoundOptions options)
@@ -167,6 +174,11 @@ namespace Early.SoundManager
             {
                 return new BgmHandle();
             }
+        }
+
+        public IBgmHandle SwitchBgm(string key, SoundFadingOptions fadingOptions)
+        {
+            return SwitchBgm(key, SoundOptions.Default, fadingOptions);
         }
 
         public IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions crossFadingOptions)
@@ -221,6 +233,7 @@ namespace Early.SoundManager
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
             audioSource.maxDistance = options.MaxDistance;
+            audioSource.transform.position = options.Position;
             audioSource.Play();
             return audioSource;
         }
@@ -235,6 +248,7 @@ namespace Early.SoundManager
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
             audioSource.maxDistance = options.MaxDistance;
+            audioSource.transform.position = options.Position;
             audioSource.Play();
             return audioSource;
         }
@@ -255,6 +269,7 @@ namespace Early.SoundManager
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
             audioSource.maxDistance = options.MaxDistance;
+            audioSource.transform.position = options.Position;
             audioSource.Play();
             return new BgmHandle(audioSource, this);
         }
