@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6aef25f28771248f3bb8e1e62b5c6060, type: 3}
+  m_Name: SoundRegistory
+  m_EditorClassIdentifier: SoundManager::Early.SoundManager.SoundRegistory
+  SoundEntries:
+  - key: Se1
+    clip: {fileID: 8300000, guid: a27046824cae34e379a36580c3f4984f, type: 3}
+  - key: Se2
+    clip: {fileID: 8300000, guid: 6eb1b11a5fed649dc80767a3cc446a00, type: 3}
+  - key: Se3
+    clip: {fileID: 8300000, guid: 944f13b9f3a6248329e011dc69f51882, type: 3}
+  - key: Bgm1
+    clip: {fileID: 8300000, guid: f4c57c460833047d8800132f63b8627a, type: 3}
+  - key: Bgm2
+    clip: {fileID: 8300000, guid: d3e3dcc6577264a5b98c97f2c96181a9, type: 3}

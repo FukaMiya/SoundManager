@@ -1,0 +1,59 @@
+using UnityEngine;
+
+namespace Early.SoundManager
+{
+    public interface ISoundService
+    {
+        float MasterVolume { get; set; }
+        float BgmVolume { get; set; }
+        float SeVolume { get; set; }
+        event System.Action OnTicked;
+        ISeHandle PlaySe(AudioClip clip);
+        ISeHandle PlaySe(AudioClip clip, SoundOptions options);
+        ISeHandle PlaySe(AudioClip clip, SoundOptions options, Vector3 position);
+        ISeHandle PlaySe(string key);
+        ISeHandle PlaySe(string key, SoundOptions options);
+        ISeHandle PlaySe(string key, SoundOptions options, Vector3 position);
+        IBgmHandle PlayBgm(AudioClip clip);
+        IBgmHandle PlayBgm(AudioClip clip, SoundOptions options);
+        IBgmHandle PlayBgm(string key);
+        IBgmHandle PlayBgm(string key, SoundOptions options);
+        IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options);
+        IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options, SoundFadingOptions crossFadingOptions);
+        IBgmHandle SwitchBgm(string key, SoundOptions options);
+        IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions crossFadingOptions);
+    }
+
+    public interface ISoundHandle : System.IDisposable
+    {
+        float Volume { get; }
+        float Pitch { get; }
+        bool IsPlaying { get; }
+        bool IsValid { get; }
+        event System.Action OnPaused;
+        event System.Action OnResumed;
+        event System.Action OnVolumeChanged;
+        event System.Action OnPitchChanged;
+        void Pause();
+        void Pause(SoundFadingOptions fadingOptions);
+        void Resume();
+        void Resume(SoundFadingOptions fadingOptions);
+        void SetVolumeRaw(float volume);
+        void SetVolume(float volume);
+        void SetVolume(float volume, SoundFadingOptions crossFadingOptions);
+        void SetPitch(float pitch);
+        void SetPitch(float pitch, SoundFadingOptions crossFadingOptions);
+        AudioSource Release();
+    }
+
+    public interface ISeHandle : ISoundHandle
+    {
+        event System.Action OnCompleted;
+        void Stop();
+        void Stop(SoundFadingOptions fadingOptions);
+    }
+
+    public interface IBgmHandle : ISoundHandle
+    {
+    }
+}
