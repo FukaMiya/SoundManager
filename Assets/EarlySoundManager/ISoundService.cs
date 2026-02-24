@@ -42,9 +42,9 @@ namespace Early.SoundManager
         void Resume(SoundFadingOptions fadingOptions);
         void SetVolumeRaw(float volume);
         void SetVolume(float volume);
-        void SetVolume(float volume, SoundFadingOptions crossFadingOptions);
+        void SetVolume(float volume, SoundFadingOptions fadeingOptions);
         void SetPitch(float pitch);
-        void SetPitch(float pitch, SoundFadingOptions crossFadingOptions);
+        void SetPitch(float pitch, SoundFadingOptions fadeingOptions);
         AudioSource Release();
     }
 

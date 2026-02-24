@@ -316,7 +316,7 @@ namespace Early.SoundManager
 
         private void OnDestroyPoolObject(AudioSource audioSource)
         {
-            Object.Destroy(audioSource.gameObject);
+            
         }
 #endregion
     }

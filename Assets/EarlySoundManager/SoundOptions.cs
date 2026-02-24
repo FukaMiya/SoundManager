@@ -41,4 +41,110 @@ namespace Early.SoundManager
             maxDistance: 500.0f
         );
     }
+
+    [System.Serializable]
+    public struct SerializableSoundOptions
+    {
+        public float Volume;
+        public float Pitch;
+        public bool Spatialize;
+        public Vector3 Position;
+        public AudioRolloffMode RolloffMode;
+        public float MinDistance;
+        public float MaxDistance;
+
+        public static implicit operator SoundOptions(SerializableSoundOptions options)
+        {
+            return new SoundOptions(
+                volume: options.Volume,
+                pitch: options.Pitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+    }
+
+    public static class SoundOptionsExtensions
+    {
+        public static SoundOptions WithVolume(this SoundOptions options, float volume)
+        {
+            return new SoundOptions(
+                volume: volume,
+                pitch: options.Pitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithVolume(this SerializableSoundOptions options, float volume)
+        {
+            return new SoundOptions(
+                volume: volume,
+                pitch: options.Pitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithPitch(this SoundOptions options, float pitch)
+        {
+            return new SoundOptions(
+                volume: options.Volume,
+                pitch: pitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithPitch(this SerializableSoundOptions options, float pitch)
+        {
+            return new SoundOptions(
+                volume: options.Volume,
+                pitch: pitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithVolumeAndPitch(this SoundOptions options, float volume, float pitch)
+        {
+            return new SoundOptions(
+                volume: volume,
+                pitch: pitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithVolumeAndPitch(this SerializableSoundOptions options, float volume, float pitch)
+        {
+            return new SoundOptions(
+                volume: volume,
+                pitch: pitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+    }
 }

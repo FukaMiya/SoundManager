@@ -13,4 +13,15 @@ namespace Early.SoundManager
             FadeDuration = fadeDuration;
         }
     }
+
+    [System.Serializable]
+    public struct SerializableSoundFadingOptions
+    {
+        public float FadeDuration;
+
+        public static implicit operator SoundFadingOptions(SerializableSoundFadingOptions options)
+        {
+            return new SoundFadingOptions(options.FadeDuration);
+        }
+    }
 }

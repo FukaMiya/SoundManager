@@ -5,6 +5,16 @@ using Early.SoundManager;
 public class Demo : MonoBehaviour
 {
     [SerializeField] private SoundRegistory soundRegistory;
+    [SerializeField] private SerializableSoundOptions defaultSoundOptions = new ()
+    {
+        Volume = 1f,
+        Pitch = 1f,
+        Spatialize = false,
+        Position = default,
+        RolloffMode = AudioRolloffMode.Logarithmic,
+        MinDistance = 1f,
+        MaxDistance = 500f
+    };
 
     private SoundManager soundService;
 
@@ -22,35 +32,23 @@ public class Demo : MonoBehaviour
     {
         if (!CheckIsPlaying()) return;
 
-        soundService.PlaySe("Se1",
-            new SoundOptions(
-                volume: 1f,
-                pitch: 1f
-            )
-        );
+        soundService.PlaySe("Se1", defaultSoundOptions);
     }
 
     public void PlaySe2()
     {
         if (!CheckIsPlaying()) return;
 
-        soundService.PlaySe("Se2",
-            new SoundOptions(
-                volume: 2f,
-                pitch: 1f
-            )
-        );
+        soundService.PlaySe("Se2", defaultSoundOptions.WithVolume(2f));
     }
 
     public void SwitchBgm1(float fadeDuration)
     {
         if (!CheckIsPlaying()) return;
 
-        soundService.SwitchBgm("Bgm1",
-            new SoundOptions(
-                volume: 0.5f,
-                pitch: 1f
-            ),
+        soundService.SwitchBgm(
+            "Bgm1",
+            defaultSoundOptions.WithVolume(0.5f),
             new SoundFadingOptions(
                 fadeDuration: fadeDuration
             )
@@ -62,10 +60,7 @@ public class Demo : MonoBehaviour
         if (!CheckIsPlaying()) return;
 
         soundService.SwitchBgm("Bgm2",
-            new SoundOptions(
-                volume: 0.5f,
-                pitch: 1f
-            ),
+            defaultSoundOptions.WithVolumeAndPitch(0.5f, 1f),
             new SoundFadingOptions(
                 fadeDuration: fadeDuration
             )
@@ -76,12 +71,7 @@ public class Demo : MonoBehaviour
     {
         if (!CheckIsPlaying()) return;
 
-        soundService.SwitchBgm("Bgm2",
-            new SoundOptions(
-                volume: 0.5f,
-                pitch: 1f
-            )
-        );
+        soundService.SwitchBgm("Bgm2", defaultSoundOptions.WithVolumeAndPitch(0.5f, 1f));
     }
 
     private bool CheckIsPlaying()
