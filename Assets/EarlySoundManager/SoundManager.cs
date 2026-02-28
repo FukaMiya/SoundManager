@@ -242,10 +242,14 @@ namespace Early.SoundManager
                 availableAudioSources.Release(nextBgm.Release());
                 nextBgm = null;
             }
-            availableAudioSources.Clear();
             audioClipCache.Clear();
             fadingTimers.Clear();
+            foreach (var handle in activeSeHandles)
+            {
+                availableAudioSources.Release(handle.Release());
+            }
             activeSeHandles.Clear();
+            availableAudioSources.Clear();
         }
 #endregion
 
