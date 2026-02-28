@@ -246,7 +246,7 @@ namespace Early.SoundManager
             fadingTimers.Clear();
             foreach (var handle in activeSeHandles)
             {
-                availableAudioSources.Release(handle.Release());
+                handle.Release();
             }
             activeSeHandles.Clear();
             availableAudioSources.Clear();

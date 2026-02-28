@@ -37,7 +37,7 @@ namespace Early.SoundManager
 
         public void Pause()
         {
-            if (!IsValid || !IsPlaying) return;
+            if (!IsValid || IsPaused) return;
 
             audioSource.Pause();
             IsPaused = true;
@@ -46,7 +46,7 @@ namespace Early.SoundManager
 
         public void Pause(SoundFadingOptions fadingOptions)
         {
-            if (!IsValid || !IsPlaying) return;
+            if (!IsValid || IsPaused) return;
 
             previousBaseVolume = BaseVolume;
             soundService.SetFadingTimer(this, new SoundFadingStatus(
@@ -60,7 +60,7 @@ namespace Early.SoundManager
 
         public void Resume()
         {
-            if (!IsValid || IsPlaying) return;
+            if (!IsValid || !IsPaused) return;
 
             audioSource.UnPause();
             IsPaused = false;
@@ -69,14 +69,15 @@ namespace Early.SoundManager
 
         public void Resume(SoundFadingOptions fadingOptions)
         {
-            if (!IsValid || IsPlaying) return;
+            if (!IsValid || !IsPaused) return;
 
+            SetVolume(0);
+            Resume();
             soundService.SetFadingTimer(this, new SoundFadingStatus(
                 SoundFadingType.Volume,
                 fadingOptions.FadeDuration,
                 0,
-                previousBaseVolume,
-                () => Resume()
+                previousBaseVolume
             ));
         }
 
