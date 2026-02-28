@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 
@@ -8,8 +9,8 @@ namespace Early.SoundManager
         private const int defaultPoolCapacity = 10;
         private const int defaultPoolMaxSize = 20;
 
-        private readonly SoundRegistory soundRegistory;
         private readonly ObjectPool<AudioSource> availableAudioSources;
+        private readonly Dictionary<string, AudioClip> audioClipCache = new ();
         private IBgmHandle currentBgm;
         private IBgmHandle nextBgm;
         private float bgmSwitchTimer = 0f;
@@ -32,7 +33,6 @@ namespace Early.SoundManager
         }
         public SoundManager(SoundRegistory soundRegistory)
         {
-            this.soundRegistory = soundRegistory;
             this.availableAudioSources = new ObjectPool<AudioSource>
             (
                 createFunc: OnCreatePoolObject,
@@ -43,6 +43,8 @@ namespace Early.SoundManager
                 defaultCapacity: defaultPoolCapacity,
                 maxSize: defaultPoolMaxSize
             );
+
+            SetupSoundRegistory(soundRegistory);
         }
 
         public void Tick()
@@ -212,17 +214,15 @@ namespace Early.SoundManager
 #region Private Helper Methods
         private bool TryGetAudioClipByKey(string key, out AudioClip clip)
         {
-            if (soundRegistory == null || soundRegistory.SoundEntries == null)
+            if (audioClipCache.Count == 0)
             {
-                Debug.LogWarning("Sound registory is not set or empty.");
+                Debug.LogWarning("Audio clip cache is not initialized.");
                 clip = null;
                 return false;
             }
 
-            var entry = System.Array.Find(soundRegistory.SoundEntries, e => e.key == key);
-            if (entry != null)
+            if (audioClipCache.TryGetValue(key, out clip))
             {
-                clip = entry.clip;
                 return true;
             }
             else
@@ -306,6 +306,27 @@ namespace Early.SoundManager
                 availableAudioSources.Release(currentBgm.Release());
                 currentBgm = nextBgm;
                 nextBgm = null;
+            }
+        }
+
+        private void SetupSoundRegistory(SoundRegistory soundRegistory)
+        {
+            if (soundRegistory == null || soundRegistory.SoundEntries == null)
+            {
+                Debug.LogWarning("Sound registory is not set or empty.");
+                return;
+            }
+
+            foreach (var entry in soundRegistory.SoundEntries)
+            {
+                if (!audioClipCache.ContainsKey(entry.key))
+                {
+                    audioClipCache.Add(entry.key, entry.clip);
+                }
+                else
+                {
+                    Debug.LogWarning($"Duplicate key '{entry.key}' found in sound registory. Skipping.");
+                }
             }
         }
 #endregion
