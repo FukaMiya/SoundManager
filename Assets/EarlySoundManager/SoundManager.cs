@@ -10,6 +10,7 @@ namespace Early.SoundManager
         private const int defaultPoolMaxSize = 20;
 
         private readonly ObjectPool<AudioSource> availableAudioSources;
+        private readonly List<ISeHandle> activeSeHandles = new ();
         private readonly Dictionary<string, AudioClip> audioClipCache = new ();
         private readonly Dictionary<ISoundHandle, ISoundFadingStatus> fadingTimers = new ();
         private readonly List<ISoundHandle> handlesToRemove = new ();
@@ -47,8 +48,8 @@ namespace Early.SoundManager
 
         public void Tick()
         {
-            Fade();
-            OnTicked?.Invoke();
+            CheckSeCompletion();
+            FadeHandles();
         }
 
 #region ISoundService Implementation
@@ -56,7 +57,6 @@ namespace Early.SoundManager
         public float SeVolume { get; private set; } = 1.0f;
         public float BgmVolume { get; private set; } = 1.0f;
 
-        public event System.Action OnTicked;
         public event System.Action OnMasterVolumeChanged;
         public event System.Action OnSeVolumeChanged;
         public event System.Action OnBgmVolumeChanged;
@@ -69,7 +69,12 @@ namespace Early.SoundManager
         public ISeHandle PlaySe(AudioClip clip, SoundOptions options)
         {
             var handle = PlaySeInternal(GetAvailableAudioSource(), clip, options);
-            handle.OnCompleted += () => availableAudioSources.Release(handle.Release());
+            handle.OnCompleted += () =>
+            {
+                availableAudioSources.Release(handle.Release());
+                activeSeHandles.Remove(handle);
+            };
+            activeSeHandles.Add(handle);
             return handle;
         }
 
@@ -330,7 +335,18 @@ namespace Early.SoundManager
             return nextBgm;
         }
 
-        private void Fade()
+        private void CheckSeCompletion()
+        {
+            for (int i = activeSeHandles.Count - 1; i >= 0; i--)
+            {
+                if (!activeSeHandles[i].IsPlaying)
+                {
+                    activeSeHandles[i].Stop();
+                }
+            }
+        }        
+
+        private void FadeHandles()
         {
             handlesToRemove.Clear();
             foreach (var (handle, fadingStatus) in fadingTimers)

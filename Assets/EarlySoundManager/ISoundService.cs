@@ -7,7 +7,6 @@ namespace Early.SoundManager
         float MasterVolume { get; }
         float BgmVolume { get; }
         float SeVolume { get; }
-        event System.Action OnTicked;
         event System.Action OnMasterVolumeChanged;
         event System.Action OnSeVolumeChanged;
         event System.Action OnBgmVolumeChanged;

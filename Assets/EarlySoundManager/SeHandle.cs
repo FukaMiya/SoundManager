@@ -19,20 +19,9 @@ namespace Early.SoundManager
         {
             this.audioSource = audioSource;
             this.soundService = soundService;
-            soundService.OnTicked += Tick;
             soundService.OnMasterVolumeChanged += ApplyVolume;
             soundService.OnSeVolumeChanged += ApplyVolume;
             IsValid = true;
-        }
-
-        private void Tick()
-        {
-            if (!IsValid) return;
-
-            if (!audioSource.isPlaying)
-            {
-                Stop();
-            }
         }
 
 #region ISeHandle Implementation
@@ -164,7 +153,6 @@ namespace Early.SoundManager
                 audioSource.clip = null;
             }
             IsValid = false;
-            soundService.OnTicked -= Tick;
         }
 #endregion
 
