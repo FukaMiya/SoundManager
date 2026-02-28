@@ -2,15 +2,26 @@ using UnityEngine;
 
 namespace Early.SoundManager
 {
-    public readonly struct SoundOptions
+    public interface ISoundOptions
     {
-        public readonly float BaseVolume;
-        public readonly float BasePitch;
-        public readonly bool Spatialize;
-        public readonly Vector3 Position;
-        public readonly AudioRolloffMode RolloffMode;
-        public readonly float MinDistance;
-        public readonly float MaxDistance;
+        float BaseVolume { get; }
+        float BasePitch { get; }
+        bool Spatialize { get; }
+        Vector3 Position { get; }
+        AudioRolloffMode RolloffMode { get; }
+        float MinDistance { get; }
+        float MaxDistance { get; }
+    }
+
+    public readonly struct SoundOptions : ISoundOptions
+    {
+        public readonly float BaseVolume { get; }
+        public readonly float BasePitch { get; }
+        public readonly bool Spatialize { get; }
+        public readonly Vector3 Position { get; }
+        public readonly AudioRolloffMode RolloffMode { get; }
+        public readonly float MinDistance { get; }
+        public readonly float MaxDistance { get; }
 
         public SoundOptions(
             float volume = 1.0f,
@@ -40,24 +51,46 @@ namespace Early.SoundManager
             minDistance: 1.0f,
             maxDistance: 500.0f
         );
+
+        public static implicit operator SerializableSoundOptions(SoundOptions options)
+        {
+            return new SerializableSoundOptions()
+            {
+                BaseVolume = options.BaseVolume,
+                BasePitch = options.BasePitch,
+                Spatialize = options.Spatialize,
+                Position = options.Position,
+                RolloffMode = options.RolloffMode,
+                MinDistance = options.MinDistance,
+                MaxDistance = options.MaxDistance
+            };
+        }
     }
 
     [System.Serializable]
-    public struct SerializableSoundOptions
+    public struct SerializableSoundOptions : ISoundOptions
     {
-        public float Volume;
-        public float Pitch;
-        public bool Spatialize;
-        public Vector3 Position;
-        public AudioRolloffMode RolloffMode;
-        public float MinDistance;
-        public float MaxDistance;
+        [SerializeField] private float baseVolume;
+        [SerializeField] private float basePitch;
+        [SerializeField] private bool spatialize;
+        [SerializeField] private Vector3 position;
+        [SerializeField] private AudioRolloffMode rolloffMode;
+        [SerializeField] private float minDistance;
+        [SerializeField] private float maxDistance;
+
+        public float BaseVolume { readonly get => baseVolume; set => baseVolume = value; }
+        public float BasePitch { readonly get => basePitch; set => basePitch = value; }
+        public bool Spatialize { readonly get => spatialize; set => spatialize = value; }
+        public Vector3 Position { readonly get => position; set => position = value; }
+        public AudioRolloffMode RolloffMode { readonly get => rolloffMode; set => rolloffMode = value; }
+        public float MinDistance { readonly get => minDistance; set => minDistance = value; }
+        public float MaxDistance { readonly get => maxDistance; set => maxDistance = value; }
 
         public static implicit operator SoundOptions(SerializableSoundOptions options)
         {
             return new SoundOptions(
-                volume: options.Volume,
-                pitch: options.Pitch,
+                volume: options.BaseVolume,
+                pitch: options.BasePitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
                 rolloffMode: options.RolloffMode,
@@ -69,7 +102,7 @@ namespace Early.SoundManager
 
     public static class SoundOptionsExtensions
     {
-        public static SoundOptions WithVolume(this SoundOptions options, float volume)
+        public static SoundOptions WithVolume<T>(this T options, float volume) where T : ISoundOptions
         {
             return new SoundOptions(
                 volume: volume,
@@ -82,20 +115,7 @@ namespace Early.SoundManager
             );
         }
 
-        public static SoundOptions WithVolume(this SerializableSoundOptions options, float volume)
-        {
-            return new SoundOptions(
-                volume: volume,
-                pitch: options.Pitch,
-                spatialize: options.Spatialize,
-                position: options.Position,
-                rolloffMode: options.RolloffMode,
-                minDistance: options.MinDistance,
-                maxDistance: options.MaxDistance
-            );
-        }
-
-        public static SoundOptions WithPitch(this SoundOptions options, float pitch)
+        public static SoundOptions WithPitch<T>(this T options, float pitch) where T : ISoundOptions
         {
             return new SoundOptions(
                 volume: options.BaseVolume,
@@ -108,20 +128,7 @@ namespace Early.SoundManager
             );
         }
 
-        public static SoundOptions WithPitch(this SerializableSoundOptions options, float pitch)
-        {
-            return new SoundOptions(
-                volume: options.Volume,
-                pitch: pitch,
-                spatialize: options.Spatialize,
-                position: options.Position,
-                rolloffMode: options.RolloffMode,
-                minDistance: options.MinDistance,
-                maxDistance: options.MaxDistance
-            );
-        }
-
-        public static SoundOptions WithVolumeAndPitch(this SoundOptions options, float volume, float pitch)
+        public static SoundOptions WithVolumeAndPitch<T>(this T options, float volume, float pitch) where T : ISoundOptions
         {
             return new SoundOptions(
                 volume: volume,
@@ -134,16 +141,68 @@ namespace Early.SoundManager
             );
         }
 
-        public static SoundOptions WithVolumeAndPitch(this SerializableSoundOptions options, float volume, float pitch)
+        public static SoundOptions WithSpatialization<T>(this T options, bool spatialize) where T : ISoundOptions
         {
             return new SoundOptions(
-                volume: volume,
-                pitch: pitch,
-                spatialize: options.Spatialize,
+                volume: options.BaseVolume,
+                pitch: options.BasePitch,
+                spatialize: spatialize,
                 position: options.Position,
                 rolloffMode: options.RolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithPosition<T>(this T options, Vector3 position) where T : ISoundOptions
+        {
+            return new SoundOptions(
+                volume: options.BaseVolume,
+                pitch: options.BasePitch,
+                spatialize: options.Spatialize,
+                position: position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithRolloffMode<T>(this T options, AudioRolloffMode rolloffMode) where T : ISoundOptions
+        {
+            return new SoundOptions(
+                volume: options.BaseVolume,
+                pitch: options.BasePitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: rolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithMinDistance<T>(this T options, float minDistance) where T : ISoundOptions
+        {
+            return new SoundOptions(
+                volume: options.BaseVolume,
+                pitch: options.BasePitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: minDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithMaxDistance<T>(this T options, float maxDistance) where T : ISoundOptions
+        {
+            return new SoundOptions(
+                volume: options.BaseVolume,
+                pitch: options.BasePitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: maxDistance
             );
         }
     }

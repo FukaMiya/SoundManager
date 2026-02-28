@@ -7,13 +7,8 @@ public sealed class Demo : MonoBehaviour
     [SerializeField] private SoundRegistory soundRegistory;
     [SerializeField] private SerializableSoundOptions defaultSoundOptions = new ()
     {
-        Volume = 1f,
-        Pitch = 1f,
-        Spatialize = false,
-        Position = default,
-        RolloffMode = AudioRolloffMode.Logarithmic,
-        MinDistance = 1f,
-        MaxDistance = 500f
+        BaseVolume = 1f,
+        BasePitch = 1f
     };
 
     private SoundManager soundService;
