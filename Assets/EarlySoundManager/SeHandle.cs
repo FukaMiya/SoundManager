@@ -40,7 +40,6 @@ namespace Early.SoundManager
         {
             if (!IsValid) return;
 
-            audioSource.Stop();
             IsPaused = false;
             OnCompleted?.Invoke();
         }

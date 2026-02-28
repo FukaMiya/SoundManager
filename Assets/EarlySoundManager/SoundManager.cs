@@ -17,19 +17,7 @@ namespace Early.SoundManager
         private IBgmHandle currentBgm;
         private IBgmHandle nextBgm;
 
-        public SoundManager()
-        {
-            this.availableAudioSources = new ObjectPool<AudioSource>
-            (
-                createFunc: OnCreatePoolObject,
-                actionOnGet: OnGetFromPool,
-                actionOnRelease: OnReleaseToPool,
-                actionOnDestroy: OnDestroyPoolObject,
-                collectionCheck: true,
-                defaultCapacity: defaultPoolCapacity,
-                maxSize: defaultPoolMaxSize
-            );
-        }
+        public SoundManager() : this(null) { }
         public SoundManager(SoundRegistory soundRegistory)
         {
             this.availableAudioSources = new ObjectPool<AudioSource>
@@ -246,7 +234,7 @@ namespace Early.SoundManager
             fadingTimers.Clear();
             foreach (var handle in activeSeHandles)
             {
-                handle.Release();
+                handle.Dispose();
             }
             activeSeHandles.Clear();
             availableAudioSources.Clear();
