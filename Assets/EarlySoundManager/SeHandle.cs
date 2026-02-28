@@ -7,9 +7,9 @@ namespace Early.SoundManager
         private readonly AudioSource audioSource;
         private readonly ISoundService soundService;
 
-        public float BaseVolume { get; private set; } = 0f;
-        public float BasePitch { get; private set; } = 0f;
-        private float previousBaseVolume = 0f;
+        public float BaseVolume { get; private set; } = 1f;
+        public float BasePitch { get; private set; } = 1f;
+        private float previousBaseVolume = 1f;
 
         public SeHandle()
         {
@@ -56,7 +56,8 @@ namespace Early.SoundManager
         {
             if (!IsValid) return;
 
-            soundService.SetFadingTimer(this, new SoundVolumeFadingStatus(
+            soundService.SetFadingTimer(this, new SoundFadingStatus(
+                SoundFadingType.Volume,
                 fadingOptions.FadeDuration,
                 BaseVolume,
                 0,
@@ -77,7 +78,8 @@ namespace Early.SoundManager
             if (!IsValid || !IsPlaying) return;
 
             previousBaseVolume = BaseVolume;
-            soundService.SetFadingTimer(this, new SoundVolumeFadingStatus(
+            soundService.SetFadingTimer(this, new SoundFadingStatus(
+                SoundFadingType.Volume,
                 fadingOptions.FadeDuration,
                 BaseVolume,
                 0,
@@ -97,7 +99,8 @@ namespace Early.SoundManager
         {
             if (!IsValid || IsPlaying) return;
 
-            soundService.SetFadingTimer(this, new SoundVolumeFadingStatus(
+            soundService.SetFadingTimer(this, new SoundFadingStatus(
+                SoundFadingType.Volume,
                 fadingOptions.FadeDuration,
                 0,
                 previousBaseVolume,
@@ -117,7 +120,8 @@ namespace Early.SoundManager
         {
             if (!IsValid) return;
 
-            soundService.SetFadingTimer(this, new SoundVolumeFadingStatus(
+            soundService.SetFadingTimer(this, new SoundFadingStatus(
+                SoundFadingType.Volume,
                 fadingOptions.FadeDuration,
                 BaseVolume,
                 volume
@@ -136,7 +140,8 @@ namespace Early.SoundManager
         {
             if (!IsValid) return;
 
-            soundService.SetFadingTimer(this, new SoundPitchFadingStatus(
+            soundService.SetFadingTimer(this, new SoundFadingStatus(
+                SoundFadingType.Pitch,
                 fadingOptions.FadeDuration,
                 BasePitch,
                 pitch

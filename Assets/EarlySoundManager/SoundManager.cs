@@ -152,7 +152,7 @@ namespace Early.SoundManager
                 fadingTimers.Remove(currentBgm);
                 if (nextBgm != null)
                 {
-                    
+                    fadingTimers.Remove(nextBgm);
                 }
                 availableAudioSources.Release(currentBgm.Release());
                 currentBgm = nextBgm;
@@ -284,8 +284,9 @@ namespace Early.SoundManager
         private IBgmHandle SwitchBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options, SoundFadingOptions crossFadingOptions)
         {
             nextBgm = new BgmHandle(audioSource, this);
-            fadingTimers[nextBgm] = new SoundVolumeFadingStatus(crossFadingOptions.FadeDuration, 0, options.Volume, null);
-            fadingTimers[currentBgm] = new SoundVolumeFadingStatus(
+            fadingTimers[nextBgm] = new SoundFadingStatus(SoundFadingType.Volume, crossFadingOptions.FadeDuration, 0, options.Volume, null);
+            fadingTimers[currentBgm] = new SoundFadingStatus(
+                SoundFadingType.Volume,
                 crossFadingOptions.FadeDuration,
                 currentBgm.Volume,
                 0,
@@ -303,6 +304,7 @@ namespace Early.SoundManager
             audioSource.loop = true;
             audioSource.clip = clip;
             SetAudioSourceParams(nextBgm, audioSource, options);
+            nextBgm.SetVolume(0);
             audioSource.Play();
             return nextBgm;
         }
@@ -317,13 +319,13 @@ namespace Early.SoundManager
                 fadingStatus.Timer += Time.deltaTime;
                 var t = Mathf.InverseLerp(0, fadingStatus.Duration, fadingStatus.Timer);
                 var newValue = Mathf.Lerp(fadingStatus.StartValue, fadingStatus.EndValue, t);
-                if (handle is ISeHandle seHandle)
+                if (fadingStatus.FadingType == SoundFadingType.Volume)
                 {
-                    seHandle.SetVolume(newValue);
+                    handle.SetVolume(newValue);
                 }
-                else if (handle is IBgmHandle bgmHandle)
+                else if (fadingStatus.FadingType == SoundFadingType.Pitch)
                 {
-                    bgmHandle.SetVolume(newValue);
+                    handle.SetPitch(newValue);
                 }
 
                 if (fadingStatus.Timer >= fadingStatus.Duration)

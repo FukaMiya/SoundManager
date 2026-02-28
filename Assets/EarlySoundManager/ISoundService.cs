@@ -58,13 +58,4 @@ namespace Early.SoundManager
     public interface IBgmHandle : ISoundHandle
     {
     }
-
-    internal interface ISoundFadingStatus
-    {
-        float Timer { get; set; }
-        float Duration { get; set; }
-        float StartValue { get; set; }
-        float EndValue { get; set; }
-        System.Action OnCompleted { get; set; }
-    }
 }
