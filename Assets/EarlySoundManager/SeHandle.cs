@@ -7,11 +7,9 @@ namespace Early.SoundManager
         private readonly AudioSource audioSource;
         private readonly ISoundService soundService;
 
-        private float baseVolume = 0f;
+        public float BaseVolume { get; private set; } = 0f;
+        public float BasePitch { get; private set; } = 0f;
         private float previousBaseVolume = 0f;
-        private float basePitch = 0f;
-        private float volumeFadeMultiplier = 0f;
-        private float pitchFadeMultiplier = 0f;
 
         public SeHandle()
         {
@@ -58,12 +56,12 @@ namespace Early.SoundManager
         {
             if (!IsValid) return;
 
-            soundService.SetFadingTimer(this, new SoundFadingStatus()
-            {
-                Timer = 0f,
-                Duration = fadingOptions.FadeDuration,
-                IsFadingIn = false
-            });
+            soundService.SetFadingTimer(this, new SoundVolumeFadingStatus(
+                fadingOptions.FadeDuration,
+                BaseVolume,
+                0,
+                () => Stop()
+            ));
         }
 
         public void Pause()
@@ -78,12 +76,13 @@ namespace Early.SoundManager
         {
             if (!IsValid || !IsPlaying) return;
 
-            soundService.SetFadingTimer(this, new SoundFadingStatus()
-            {
-                Timer = 0f,
-                Duration = fadingOptions.FadeDuration,
-                IsFadingIn = false
-            });
+            previousBaseVolume = BaseVolume;
+            soundService.SetFadingTimer(this, new SoundVolumeFadingStatus(
+                fadingOptions.FadeDuration,
+                BaseVolume,
+                0,
+                () => Pause()
+            ));
         }
 
         public void Resume()
@@ -98,54 +97,50 @@ namespace Early.SoundManager
         {
             if (!IsValid || IsPlaying) return;
 
-            soundService.SetFadingTimer(this, new SoundFadingStatus()
-            {
-                Timer = 0f,
-                Duration = fadingOptions.FadeDuration,
-                IsFadingIn = true
-            });
+            soundService.SetFadingTimer(this, new SoundVolumeFadingStatus(
+                fadingOptions.FadeDuration,
+                0,
+                previousBaseVolume,
+                () => Resume()
+            ));
         }
 
         public void SetVolume(float volume)
         {
             if (!IsValid) return;
 
-            baseVolume = volume;
+            BaseVolume = volume;
             ApplyVolume();
         }
 
         public void SetVolume(float volume, SoundFadingOptions fadingOptions)
         {
             if (!IsValid) return;
-        }
 
-        public void SetVolumeFadeMultiplier(float multiplier)
-        {
-            if (!IsValid) return;
-
-            volumeFadeMultiplier = multiplier;
-            ApplyVolume();
+            soundService.SetFadingTimer(this, new SoundVolumeFadingStatus(
+                fadingOptions.FadeDuration,
+                BaseVolume,
+                volume
+            ));
         }
 
         public void SetPitch(float pitch)
         {
             if (!IsValid) return;
 
-            basePitch = pitch;
+            BasePitch = pitch;
             ApplyPitch();
         }
 
         public void SetPitch(float pitch, SoundFadingOptions fadingOptions)
         {
             if (!IsValid) return;
-        }
 
-        public void SetPitchFadeMultiplier(float multiplier)
-        {
-            if (!IsValid) return;
-
-            pitchFadeMultiplier = multiplier;
-            ApplyPitch();
+            soundService.SetFadingTimer(this, new SoundPitchFadingStatus(
+                fadingOptions.FadeDuration,
+                BasePitch,
+                pitch
+            ));
         }
 
         public AudioSource Release()
@@ -169,13 +164,13 @@ namespace Early.SoundManager
 #region Private Helper Methods
         private void ApplyVolume()
         {
-            audioSource.volume = baseVolume * volumeFadeMultiplier * soundService.SeVolume * soundService.MasterVolume;
+            audioSource.volume = BaseVolume * soundService.SeVolume * soundService.MasterVolume;
             OnVolumeChanged?.Invoke();
         }
 
         private void ApplyPitch()
         {
-            audioSource.pitch = basePitch * pitchFadeMultiplier;
+            audioSource.pitch = BasePitch;
             OnPitchChanged?.Invoke();
         }
 #endregion

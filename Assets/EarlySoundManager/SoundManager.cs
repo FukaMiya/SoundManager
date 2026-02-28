@@ -11,7 +11,7 @@ namespace Early.SoundManager
 
         private readonly ObjectPool<AudioSource> availableAudioSources;
         private readonly Dictionary<string, AudioClip> audioClipCache = new ();
-        private readonly Dictionary<ISoundHandle, SoundFadingStatus> fadingTimers = new ();
+        private readonly Dictionary<ISoundHandle, ISoundFadingStatus> fadingTimers = new ();
         private readonly List<ISoundHandle> handlesToRemove = new ();
         private IBgmHandle currentBgm;
         private IBgmHandle nextBgm;
@@ -150,6 +150,10 @@ namespace Early.SoundManager
             if (fadingTimers.TryGetValue(currentBgm, out var _))
             {
                 fadingTimers.Remove(currentBgm);
+                if (nextBgm != null)
+                {
+                    
+                }
                 availableAudioSources.Release(currentBgm.Release());
                 currentBgm = nextBgm;
                 nextBgm = null;
@@ -192,7 +196,7 @@ namespace Early.SoundManager
             }
         }
 
-        void ISoundService.SetFadingTimer(ISoundHandle handle, SoundFadingStatus fadingStatus)
+        void ISoundService.SetFadingTimer(ISoundHandle handle, ISoundFadingStatus fadingStatus)
         {
             if (handle != null && handle.IsValid)
             {
@@ -213,6 +217,8 @@ namespace Early.SoundManager
                 nextBgm = null;
             }
             availableAudioSources.Clear();
+            audioClipCache.Clear();
+            fadingTimers.Clear();
         }
 #endregion
 
@@ -246,9 +252,7 @@ namespace Early.SoundManager
         private AudioSource SetAudioSourceParams(ISoundHandle handle, AudioSource audioSource, SoundOptions options)
         {
             handle.SetVolume(options.Volume);
-            handle.SetPitchFadeMultiplier(1f);
             handle.SetPitch(options.Pitch);
-            handle.SetVolumeFadeMultiplier(1f);
             audioSource.spatialBlend = options.Spatialize ? 1.0f : 0.0f;
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
@@ -280,14 +284,12 @@ namespace Early.SoundManager
         private IBgmHandle SwitchBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options, SoundFadingOptions crossFadingOptions)
         {
             nextBgm = new BgmHandle(audioSource, this);
-            fadingTimers[nextBgm] = new SoundFadingStatus()
-            { Timer = 0f, Duration = crossFadingOptions.FadeDuration, IsFadingIn = true };
-            fadingTimers[currentBgm] = new SoundFadingStatus
-            {
-                Timer = 0f,
-                Duration = crossFadingOptions.FadeDuration,
-                IsFadingIn = false,
-                OnCompleted = () =>
+            fadingTimers[nextBgm] = new SoundVolumeFadingStatus(crossFadingOptions.FadeDuration, 0, options.Volume, null);
+            fadingTimers[currentBgm] = new SoundVolumeFadingStatus(
+                crossFadingOptions.FadeDuration,
+                currentBgm.Volume,
+                0,
+                () =>
                 {
                     if (currentBgm != null)
                     {
@@ -296,12 +298,11 @@ namespace Early.SoundManager
                     currentBgm = nextBgm;
                     nextBgm = null;
                 }
-            };
+            );
 
             audioSource.loop = true;
             audioSource.clip = clip;
             SetAudioSourceParams(nextBgm, audioSource, options);
-            nextBgm.SetVolumeFadeMultiplier(0f);
             audioSource.Play();
             return nextBgm;
         }
@@ -315,17 +316,25 @@ namespace Early.SoundManager
 
                 fadingStatus.Timer += Time.deltaTime;
                 var t = Mathf.InverseLerp(0, fadingStatus.Duration, fadingStatus.Timer);
-                handle.SetVolumeFadeMultiplier(fadingStatus.IsFadingIn ? t : 1 - t);
+                var newValue = Mathf.Lerp(fadingStatus.StartValue, fadingStatus.EndValue, t);
+                if (handle is ISeHandle seHandle)
+                {
+                    seHandle.SetVolume(newValue);
+                }
+                else if (handle is IBgmHandle bgmHandle)
+                {
+                    bgmHandle.SetVolume(newValue);
+                }
 
                 if (fadingStatus.Timer >= fadingStatus.Duration)
                 {
                     handlesToRemove.Add(handle);
-                    fadingStatus.OnCompleted?.Invoke();
                 }
             }
 
             foreach (var handle in handlesToRemove)
             {
+                fadingTimers[handle].OnCompleted?.Invoke();
                 fadingTimers.Remove(handle);
             }
         }

@@ -24,7 +24,7 @@ namespace Early.SoundManager
         IBgmHandle SwitchBgm(string key, SoundOptions options);
         IBgmHandle SwitchBgm(string key, SoundFadingOptions fadingOptions);
         IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions fadingOptions);
-        internal void SetFadingTimer(ISoundHandle handle, SoundFadingStatus fadingStatus);
+        internal void SetFadingTimer(ISoundHandle handle, ISoundFadingStatus fadingStatus);
     }
 
     public interface ISoundHandle : System.IDisposable
@@ -43,10 +43,8 @@ namespace Early.SoundManager
         void Resume(SoundFadingOptions fadingOptions);
         void SetVolume(float volume);
         void SetVolume(float volume, SoundFadingOptions fadingOptions);
-        void SetVolumeFadeMultiplier(float multiplier);
         void SetPitch(float pitch);
         void SetPitch(float pitch, SoundFadingOptions fadingOptions);
-        void SetPitchFadeMultiplier(float multiplier);
         AudioSource Release();
     }
 
@@ -61,11 +59,12 @@ namespace Early.SoundManager
     {
     }
 
-    internal sealed class SoundFadingStatus
+    internal interface ISoundFadingStatus
     {
-        public float Timer { get; set; }
-        public float Duration { get; set; }
-        public bool IsFadingIn { get; set; }
-        public System.Action OnCompleted { get; set; }
+        float Timer { get; set; }
+        float Duration { get; set; }
+        float StartValue { get; set; }
+        float EndValue { get; set; }
+        System.Action OnCompleted { get; set; }
     }
 }
