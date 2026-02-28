@@ -54,7 +54,7 @@ namespace Early.SoundManager
         void SetVolume(float volume, SoundFadingOptions fadingOptions);
         void SetPitch(float pitch);
         void SetPitch(float pitch, SoundFadingOptions fadingOptions);
-        AudioSource Release();
+        internal AudioSource Release();
     }
 
     public interface ISeHandle : ISoundHandle

@@ -40,6 +40,7 @@ namespace Early.SoundManager
         {
             if (!IsValid) return;
 
+            audioSource.Stop();
             IsPaused = false;
             OnCompleted?.Invoke();
         }
@@ -143,7 +144,7 @@ namespace Early.SoundManager
             ));
         }
 
-        public AudioSource Release()
+        AudioSource ISoundHandle.Release()
         {
             Dispose();
             return audioSource;

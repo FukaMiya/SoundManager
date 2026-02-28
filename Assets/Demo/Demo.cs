@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using Early.SoundManager;
 
-public class Demo : MonoBehaviour
+public sealed class Demo : MonoBehaviour
 {
     [SerializeField] private SoundRegistory soundRegistory;
     [SerializeField] private SerializableSoundOptions defaultSoundOptions = new ()
@@ -17,6 +17,7 @@ public class Demo : MonoBehaviour
     };
 
     private SoundManager soundService;
+    public IBgmHandle CurrentBgm { get; private set; }
 
     private void Start()
     {
@@ -30,25 +31,19 @@ public class Demo : MonoBehaviour
 
     public void PlaySe1()
     {
-        if (!CheckIsPlaying()) return;
-
         soundService.PlaySe("Se1", defaultSoundOptions);
     }
 
     public void PlaySe2()
     {
-        if (!CheckIsPlaying()) return;
-
-        soundService.PlaySe("Se2", defaultSoundOptions.WithVolume(2f));
+        soundService.PlaySe("Se2", defaultSoundOptions);
     }
 
     public void SwitchBgm1(float fadeDuration)
     {
-        if (!CheckIsPlaying()) return;
-
-        soundService.SwitchBgm(
+        CurrentBgm = soundService.SwitchBgm(
             "Bgm1",
-            defaultSoundOptions.WithVolume(0.5f),
+            defaultSoundOptions,
             new SoundFadingOptions(
                 fadeDuration: fadeDuration
             )
@@ -57,10 +52,8 @@ public class Demo : MonoBehaviour
 
     public void SwitchBgm2(float fadeDuration)
     {
-        if (!CheckIsPlaying()) return;
-
-        soundService.SwitchBgm("Bgm2",
-            defaultSoundOptions.WithVolumeAndPitch(0.5f, 1f),
+        CurrentBgm = soundService.SwitchBgm("Bgm2",
+            defaultSoundOptions,
             new SoundFadingOptions(
                 fadeDuration: fadeDuration
             )
@@ -69,31 +62,14 @@ public class Demo : MonoBehaviour
 
     public void SwitchBgm2()
     {
-        if (!CheckIsPlaying()) return;
-
-        soundService.SwitchBgm("Bgm2", defaultSoundOptions.WithVolumeAndPitch(0.5f, 1f));
+        CurrentBgm = soundService.SwitchBgm("Bgm2", defaultSoundOptions.WithVolumeAndPitch(0.5f, 1f));
     }
 
     public void ApplyVolumeSettings(float masterVolume, float seVolume, float bgmVolume)
     {
-        if (!CheckIsPlaying()) return;
-
         soundService.SetMasterVolume(masterVolume);
         soundService.SetSeVolume(seVolume);
         soundService.SetBgmVolume(bgmVolume);
-    }
-
-    private bool CheckIsPlaying()
-    {
-        if (Application.isPlaying)
-        {
-            return true;
-        }
-        else
-        {
-            Debug.Log("Run in Play Mode");
-            return false;
-        }
     }
 }
 
@@ -102,8 +78,9 @@ public class Demo : MonoBehaviour
 public class DemoEditor : Editor
 {
     private Demo demo;
+    private bool isPlaying => Application.isPlaying;
     private float fadeDuration1 = 1f;
-    private float fadeDuration2 = 1f;
+    private float bgmFadeDuration = 1f;
     private float masterVolume = 1f;
     private float seVolume = 1f;
     private float bgmVolume = 1f;
@@ -111,16 +88,26 @@ public class DemoEditor : Editor
     private void OnEnable()
     {
         demo = (Demo)target;
+        EditorApplication.update += () =>
+        {
+            if (isPlaying) Repaint();
+        };
     }
 
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
+        if (!isPlaying)
+        {
+            GUILayout.Space(10);
+            GUILayout.Label("Enter Play Mode to use the demo controls.", EditorStyles.helpBox);
+            return;
+        }
 
         GUILayout.Space(10);
         GUILayout.Label("Demo Controls", EditorStyles.boldLabel);
-        GUILayout.Space(10);
 
+        GUILayout.Space(20);
         GUILayout.Label("Sound Effects", EditorStyles.boldLabel);
         if (GUILayout.Button("Play Se1"))
         {
@@ -131,19 +118,28 @@ public class DemoEditor : Editor
         {
             demo.PlaySe2();
         }
-        GUILayout.Space(10);
 
+        GUILayout.Space(20);
         GUILayout.Label("Background Music", EditorStyles.boldLabel);
-        fadeDuration1 = EditorGUILayout.FloatField("Fade Duration", fadeDuration1);
+        GUILayout.Label($"BGM: {(demo.CurrentBgm?.IsPlaying == true ? "Playing" : "Stopped")}");
+        GUILayout.Label($"BGM Volume: {demo.CurrentBgm?.Volume:F2}");
+        if (GUILayout.Button("Pause BGM"))
+        {
+            demo.CurrentBgm?.Pause();   
+        }
+        if (GUILayout.Button("Resume BGM (fade)"))
+        {
+            demo.CurrentBgm?.Resume(new SoundFadingOptions(1f));   
+        }
+
+        bgmFadeDuration = EditorGUILayout.FloatField("Fade Duration", bgmFadeDuration);
         if (GUILayout.Button("Switch Bgm1 (with fade)"))
         {
             demo.SwitchBgm1(fadeDuration1);
         }
-
-        fadeDuration2 = EditorGUILayout.FloatField("Fade Duration", fadeDuration2);
         if (GUILayout.Button("Switch Bgm2 (with fade)"))
         {
-            demo.SwitchBgm2(fadeDuration2);
+            demo.SwitchBgm2(bgmFadeDuration);
         }
 
         if (GUILayout.Button("Switch Bgm2 (no fade)"))
@@ -151,11 +147,13 @@ public class DemoEditor : Editor
             demo.SwitchBgm2();
         }
 
-        GUILayout.Space(10);
+        GUILayout.Space(20);
+        GUILayout.Label("Volume Settings", EditorStyles.boldLabel);
+        EditorGUI.BeginChangeCheck();
         masterVolume = EditorGUILayout.Slider("Master Volume", masterVolume, 0f, 1f);
         seVolume = EditorGUILayout.Slider("SE Volume", seVolume, 0f, 1f);
         bgmVolume = EditorGUILayout.Slider("BGM Volume", bgmVolume, 0f, 1f);
-        if (GUILayout.Button("Apply Volume Settings"))
+        if (EditorGUI.EndChangeCheck())
         {
             demo.ApplyVolumeSettings(masterVolume, seVolume, bgmVolume);
         }

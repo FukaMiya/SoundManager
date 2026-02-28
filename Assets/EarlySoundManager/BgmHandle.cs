@@ -121,7 +121,7 @@ namespace Early.SoundManager
             ));
         }
 
-        public AudioSource Release()
+        AudioSource ISoundHandle.Release()
         {
             Dispose();
             return audioSource;

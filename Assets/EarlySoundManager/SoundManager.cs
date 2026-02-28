@@ -246,7 +246,6 @@ namespace Early.SoundManager
         {
             if (audioClipCache.Count == 0)
             {
-                Debug.LogWarning("Audio clip cache is not initialized.");
                 clip = null;
                 return false;
             }
@@ -375,9 +374,13 @@ namespace Early.SoundManager
 
         private void SetupSoundRegistory(SoundRegistory soundRegistory)
         {
-            if (soundRegistory == null || soundRegistory.SoundEntries == null)
+            if (soundRegistory == null)
             {
-                Debug.LogWarning("Sound registory is not set or empty.");
+                return;
+            }
+            if (soundRegistory == null)
+            {
+                Debug.LogWarning("Sound registory is empty.");
                 return;
             }
 
