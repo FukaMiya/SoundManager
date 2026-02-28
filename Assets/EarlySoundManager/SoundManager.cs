@@ -275,7 +275,7 @@ namespace Early.SoundManager
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
             audioSource.maxDistance = options.MaxDistance;
-            audioSource.transform.position = options.Position;
+            audioSource.transform.position = options.PositionSource != null ? options.PositionSource.position + options.Position : options.Position;
             return audioSource;
         }
     

@@ -8,6 +8,7 @@ namespace Early.SoundManager
         float BasePitch { get; }
         bool Spatialize { get; }
         Vector3 Position { get; }
+        Transform PositionSource { get; }
         AudioRolloffMode RolloffMode { get; }
         float MinDistance { get; }
         float MaxDistance { get; }
@@ -19,6 +20,7 @@ namespace Early.SoundManager
         public readonly float BasePitch { get; }
         public readonly bool Spatialize { get; }
         public readonly Vector3 Position { get; }
+        public readonly Transform PositionSource { get; }
         public readonly AudioRolloffMode RolloffMode { get; }
         public readonly float MinDistance { get; }
         public readonly float MaxDistance { get; }
@@ -28,6 +30,7 @@ namespace Early.SoundManager
             float pitch = 1.0f,
             bool spatialize = false,
             Vector3 position = default,
+            Transform positionSource = null,
             AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic,
             float minDistance = 1.0f,
             float maxDistance = 500.0f
@@ -37,6 +40,7 @@ namespace Early.SoundManager
             BasePitch = pitch;
             Spatialize = spatialize;
             Position = position;
+            PositionSource = positionSource;
             RolloffMode = rolloffMode;
             MinDistance = minDistance;
             MaxDistance = maxDistance;
@@ -47,6 +51,7 @@ namespace Early.SoundManager
             pitch: 1.0f,
             spatialize: false,
             position: default,
+            positionSource: null,
             rolloffMode: AudioRolloffMode.Logarithmic,
             minDistance: 1.0f,
             maxDistance: 500.0f
@@ -60,6 +65,7 @@ namespace Early.SoundManager
                 BasePitch = options.BasePitch,
                 Spatialize = options.Spatialize,
                 Position = options.Position,
+                PositionSource = options.PositionSource,
                 RolloffMode = options.RolloffMode,
                 MinDistance = options.MinDistance,
                 MaxDistance = options.MaxDistance
@@ -74,6 +80,7 @@ namespace Early.SoundManager
         [SerializeField] private float basePitch;
         [SerializeField] private bool spatialize;
         [SerializeField] private Vector3 position;
+        [SerializeField] private Transform positionSource;
         [SerializeField] private AudioRolloffMode rolloffMode;
         [SerializeField] private float minDistance;
         [SerializeField] private float maxDistance;
@@ -82,6 +89,7 @@ namespace Early.SoundManager
         public float BasePitch { readonly get => basePitch; set => basePitch = value; }
         public bool Spatialize { readonly get => spatialize; set => spatialize = value; }
         public Vector3 Position { readonly get => position; set => position = value; }
+        public Transform PositionSource { readonly get => positionSource; set => positionSource = value; }
         public AudioRolloffMode RolloffMode { readonly get => rolloffMode; set => rolloffMode = value; }
         public float MinDistance { readonly get => minDistance; set => minDistance = value; }
         public float MaxDistance { readonly get => maxDistance; set => maxDistance = value; }
@@ -93,6 +101,7 @@ namespace Early.SoundManager
                 pitch: options.BasePitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
+                positionSource: options.PositionSource,
                 rolloffMode: options.RolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: options.MaxDistance
@@ -109,6 +118,7 @@ namespace Early.SoundManager
                 pitch: options.BasePitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
+                positionSource: options.PositionSource,
                 rolloffMode: options.RolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: options.MaxDistance
@@ -122,6 +132,7 @@ namespace Early.SoundManager
                 pitch: pitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
+                positionSource: options.PositionSource,
                 rolloffMode: options.RolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: options.MaxDistance
@@ -135,6 +146,7 @@ namespace Early.SoundManager
                 pitch: pitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
+                positionSource: options.PositionSource,
                 rolloffMode: options.RolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: options.MaxDistance
@@ -148,6 +160,7 @@ namespace Early.SoundManager
                 pitch: options.BasePitch,
                 spatialize: spatialize,
                 position: options.Position,
+                positionSource: options.PositionSource,
                 rolloffMode: options.RolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: options.MaxDistance
@@ -161,6 +174,21 @@ namespace Early.SoundManager
                 pitch: options.BasePitch,
                 spatialize: options.Spatialize,
                 position: position,
+                positionSource: options.PositionSource,
+                rolloffMode: options.RolloffMode,
+                minDistance: options.MinDistance,
+                maxDistance: options.MaxDistance
+            );
+        }
+
+        public static SoundOptions WithPositionSource<T>(this T options, Transform positionSource) where T : ISoundOptions
+        {
+            return new SoundOptions(
+                volume: options.BaseVolume,
+                pitch: options.BasePitch,
+                spatialize: options.Spatialize,
+                position: options.Position,
+                positionSource: positionSource,
                 rolloffMode: options.RolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: options.MaxDistance
@@ -174,6 +202,7 @@ namespace Early.SoundManager
                 pitch: options.BasePitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
+                positionSource: options.PositionSource,
                 rolloffMode: rolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: options.MaxDistance
@@ -187,6 +216,7 @@ namespace Early.SoundManager
                 pitch: options.BasePitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
+                positionSource: options.PositionSource,
                 rolloffMode: options.RolloffMode,
                 minDistance: minDistance,
                 maxDistance: options.MaxDistance
@@ -200,6 +230,7 @@ namespace Early.SoundManager
                 pitch: options.BasePitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
+                positionSource: options.PositionSource,
                 rolloffMode: options.RolloffMode,
                 minDistance: options.MinDistance,
                 maxDistance: maxDistance
