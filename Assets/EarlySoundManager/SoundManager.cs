@@ -192,6 +192,21 @@ namespace Early.SoundManager
                 return new BgmHandle();
             }
         }
+
+        public void Dispose()
+        {
+            if (currentBgm != null && currentBgm.IsValid)
+            {
+                availableAudioSources.Release(currentBgm.Release());
+                currentBgm = null;
+            }
+            if (nextBgm != null && nextBgm.IsValid)
+            {
+                availableAudioSources.Release(nextBgm.Release());
+                nextBgm = null;
+            }
+            availableAudioSources.Clear();
+        }
 #endregion
 
 #region Private Helper Methods
@@ -271,7 +286,7 @@ namespace Early.SoundManager
             audioSource.maxDistance = options.MaxDistance;
             audioSource.transform.position = options.Position;
             audioSource.Play();
-            return new BgmHandle(audioSource, this);
+            return nextBgm;
         }
 
         private void CrossFadeBgm()
@@ -299,6 +314,7 @@ namespace Early.SoundManager
         private AudioSource OnCreatePoolObject()
         {
             var audioSource = new GameObject("PooledAudioSource").AddComponent<AudioSource>();
+            Object.DontDestroyOnLoad(audioSource.gameObject);
             return audioSource;
         }
 
@@ -309,6 +325,8 @@ namespace Early.SoundManager
 
         private void OnReleaseToPool(AudioSource audioSource)
         {
+            if (audioSource == null) return;
+
             audioSource.Stop();
             audioSource.clip = null;
             audioSource.gameObject.SetActive(false);
@@ -316,7 +334,9 @@ namespace Early.SoundManager
 
         private void OnDestroyPoolObject(AudioSource audioSource)
         {
-            
+            if (audioSource == null) return;
+
+            Object.Destroy(audioSource.gameObject);
         }
 #endregion
     }

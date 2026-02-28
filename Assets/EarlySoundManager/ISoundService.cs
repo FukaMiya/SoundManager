@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Early.SoundManager
 {
-    public interface ISoundService
+    public interface ISoundService : System.IDisposable
     {
         float MasterVolume { get; set; }
         float BgmVolume { get; set; }

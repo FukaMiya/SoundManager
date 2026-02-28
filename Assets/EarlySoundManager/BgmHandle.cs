@@ -154,7 +154,7 @@ namespace Early.SoundManager
 
         public AudioSource Release()
         {
-            IsValid = false;
+            Dispose();
             return audioSource;
         }
 
