@@ -40,11 +40,12 @@ namespace Early.SoundManager
         void Pause(SoundFadingOptions fadingOptions);
         void Resume();
         void Resume(SoundFadingOptions fadingOptions);
-        void SetVolumeRaw(float volume);
         void SetVolume(float volume);
         void SetVolume(float volume, SoundFadingOptions fadeingOptions);
+        void SetVolumeFadeMultiplier(float multiplier);
         void SetPitch(float pitch);
         void SetPitch(float pitch, SoundFadingOptions fadeingOptions);
+        void SetPitchFadeMultiplier(float multiplier);
         AudioSource Release();
     }
 
@@ -57,5 +58,13 @@ namespace Early.SoundManager
 
     public interface IBgmHandle : ISoundHandle
     {
+    }
+
+    internal sealed class SoundFadingStatus
+    {
+        public float Timer { get; set; }
+        public float Duration { get; set; }
+        public bool IsFadingIn { get; set; }
+        public System.Action OnCompleted { get; set; }
     }
 }

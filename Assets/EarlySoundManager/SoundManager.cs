@@ -11,12 +11,10 @@ namespace Early.SoundManager
 
         private readonly ObjectPool<AudioSource> availableAudioSources;
         private readonly Dictionary<string, AudioClip> audioClipCache = new ();
+        private readonly Dictionary<IBgmHandle, SoundFadingStatus> bgmFadingTimers = new ();
+        private readonly Dictionary<ISeHandle, SoundFadingStatus> seFadingTimers = new ();
         private IBgmHandle currentBgm;
         private IBgmHandle nextBgm;
-        private float bgmSwitchTimer = 0f;
-        private float bgmSwitchDuration = 0f;
-        private float targetSwitchStartVolume = 0f;
-        private float sourceSwitchEndVolume = 0f;
 
         public SoundManager()
         {
@@ -70,6 +68,8 @@ namespace Early.SoundManager
             var audioSource = PlaySeInternal(GetAvailableAudioSource(), clip, options);
             var handle = new SeHandle(audioSource, this);
             handle.OnCompleted += () => availableAudioSources.Release(handle.Release());
+            handle.SetVolume(options.Volume);
+            handle.SetPitch(options.Pitch);
             return handle;
         }
 
@@ -104,6 +104,8 @@ namespace Early.SoundManager
 
             var audioSource = PlayBgmInternal(GetAvailableAudioSource(), clip, options);
             currentBgm = new BgmHandle(audioSource, this);
+            currentBgm.SetVolume(options.Volume);
+            currentBgm.SetPitch(options.Pitch);
             return currentBgm;
         }
 
@@ -151,8 +153,9 @@ namespace Early.SoundManager
                 return PlayBgm(clip, options);
             }
 
-            if (bgmSwitchDuration > 0f)
+            if (bgmFadingTimers.TryGetValue(currentBgm, out var _))
             {
+                bgmFadingTimers.Remove(currentBgm);
                 availableAudioSources.Release(currentBgm.Release());
                 currentBgm = nextBgm;
                 nextBgm = null;
@@ -242,8 +245,6 @@ namespace Early.SoundManager
         {
             audioSource.loop = false;
             audioSource.clip = clip;
-            audioSource.volume = options.Volume * SeVolume * MasterVolume;
-            audioSource.pitch = options.Pitch;
             audioSource.spatialBlend = options.Spatialize ? 1.0f : 0.0f;
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
@@ -257,8 +258,6 @@ namespace Early.SoundManager
         {
             audioSource.loop = true;
             audioSource.clip = clip;
-            audioSource.volume = options.Volume * BgmVolume * MasterVolume;
-            audioSource.pitch = options.Pitch;
             audioSource.spatialBlend = options.Spatialize ? 1.0f : 0.0f;
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
@@ -270,16 +269,30 @@ namespace Early.SoundManager
 
         private IBgmHandle SwitchBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options, SoundFadingOptions crossFadingOptions)
         {
-            bgmSwitchDuration = crossFadingOptions.FadeDuration;
-            bgmSwitchTimer = 0f;
-            targetSwitchStartVolume = currentBgm.Volume;
-            sourceSwitchEndVolume = options.Volume * BgmVolume * MasterVolume;
             nextBgm = new BgmHandle(audioSource, this);
+            nextBgm.SetVolume(options.Volume);
+            nextBgm.SetPitch(options.Pitch);
+            nextBgm.SetVolumeFadeMultiplier(0f);
+            bgmFadingTimers[nextBgm] = new SoundFadingStatus()
+            { Timer = 0f, Duration = crossFadingOptions.FadeDuration, IsFadingIn = true };
+            bgmFadingTimers[currentBgm] = new SoundFadingStatus
+            {
+                Timer = 0f,
+                Duration = crossFadingOptions.FadeDuration,
+                IsFadingIn = false,
+                OnCompleted = () =>
+                {
+                    if (currentBgm != null)
+                    {
+                        availableAudioSources.Release(currentBgm.Release());
+                    }
+                    currentBgm = nextBgm;
+                    nextBgm = null;
+                }
+            };
 
             audioSource.loop = true;
             audioSource.clip = clip;
-            audioSource.volume = 0;
-            audioSource.pitch = options.Pitch;
             audioSource.spatialBlend = options.Spatialize ? 1.0f : 0.0f;
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
@@ -291,21 +304,26 @@ namespace Early.SoundManager
 
         private void CrossFadeBgm()
         {
-            if (bgmSwitchDuration <= 0) return;
-
-            bgmSwitchTimer += Time.deltaTime;
-            var t = Mathf.InverseLerp(0, bgmSwitchDuration, bgmSwitchTimer);
-            var sVolume = Mathf.Lerp(targetSwitchStartVolume, 0, t);
-            var tVolume = Mathf.Lerp(0, sourceSwitchEndVolume, t);
-            currentBgm.SetVolumeRaw(sVolume);
-            nextBgm.SetVolumeRaw(tVolume);
-            if (bgmSwitchTimer >= bgmSwitchDuration)
+            List<IBgmHandle> bgmsToRemove = new ();
+            foreach (var (bgm, fadingStatus) in bgmFadingTimers)
             {
-                bgmSwitchTimer = 0f;
-                bgmSwitchDuration = 0f;
-                availableAudioSources.Release(currentBgm.Release());
-                currentBgm = nextBgm;
-                nextBgm = null;
+                if (fadingStatus.Duration <= 0) return;
+
+                fadingStatus.Timer += Time.deltaTime;
+                var t = Mathf.InverseLerp(0, fadingStatus.Duration, fadingStatus.Timer);
+                Debug.Log($"Cross-fading BGM: {bgm}, Timer: {fadingStatus.Timer}, Duration: {fadingStatus.Duration}, t: {t}");
+                bgm.SetVolumeFadeMultiplier(fadingStatus.IsFadingIn ? t : 1 - t);
+
+                if (fadingStatus.Timer >= fadingStatus.Duration)
+                {
+                    bgmsToRemove.Add(bgm);
+                    fadingStatus.OnCompleted?.Invoke();
+                }
+            }
+
+            foreach (var bgm in bgmsToRemove)
+            {
+                bgmFadingTimers.Remove(bgm);
             }
         }
 

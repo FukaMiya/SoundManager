@@ -7,15 +7,10 @@ namespace Early.SoundManager
         private readonly AudioSource audioSource;
         private readonly ISoundService soundService;
 
-        private System.Action currentFadingCompletedAction = null;
-        private float volumeFadeTimer = 0f;
-        private float volumeFadeDuration = 0f;
-        private float startVolume = 0f;
-        private float endVolume = 0f;
-        private float pitchFadeTimer = 0f;
-        private float pitchFadeDuration = 0f;
-        private float startPitch = 0f;
-        private float endPitch = 0f;
+        private float baseVolume = 0f;
+        private float basePitch = 0f;
+        private float volumeFadeMultiplier = 1f;
+        private float pitchFadeMultiplier = 1f;
 
         public BgmHandle()
         {
@@ -32,32 +27,6 @@ namespace Early.SoundManager
         private void Tick()
         {
             if (!IsValid) return;
-
-            if (volumeFadeTimer < volumeFadeDuration)
-            {
-                volumeFadeTimer += Time.deltaTime;
-                float t = Mathf.Clamp01(volumeFadeTimer / volumeFadeDuration);
-                SetVolumeRaw(Mathf.Lerp(startVolume, endVolume, t));
-                if (volumeFadeTimer >= volumeFadeDuration)
-                {
-                    volumeFadeTimer = 0f;
-                    volumeFadeDuration = 0f;
-                    OnVolumeChanged?.Invoke();
-                }
-            }
-
-            if (pitchFadeTimer < pitchFadeDuration)
-            {
-                pitchFadeTimer += Time.deltaTime;
-                float t = Mathf.Clamp01(pitchFadeTimer / pitchFadeDuration);
-                SetPitch(Mathf.Lerp(startPitch, endPitch, t));
-                if (pitchFadeTimer >= pitchFadeDuration)
-                {
-                    pitchFadeTimer = 0f;
-                    pitchFadeDuration = 0f;
-                    OnPitchChanged?.Invoke();
-                }
-            }
         }
 
 #region IBgmHandle Implementation
@@ -81,12 +50,6 @@ namespace Early.SoundManager
         public void Pause(SoundFadingOptions fadingOptions)
         {
             if (!IsValid || !IsPlaying) return;
-
-            currentFadingCompletedAction = Pause;
-            volumeFadeTimer = 0f;
-            volumeFadeDuration = fadingOptions.FadeDuration;
-            startVolume = audioSource.volume;
-            endVolume = 0f;
         }
 
         public void Resume()
@@ -100,56 +63,48 @@ namespace Early.SoundManager
         public void Resume(SoundFadingOptions fadingOptions)
         {
             if (!IsValid || IsPlaying) return;
-
-            currentFadingCompletedAction = Resume;
-            volumeFadeTimer = 0f;
-            volumeFadeDuration = fadingOptions.FadeDuration;
-            startVolume = audioSource.volume;
-            endVolume = 1f;
-        }
-
-        public void SetVolumeRaw(float volume)
-        {
-            if (!IsValid) return;
-
-            audioSource.volume = volume;
-            OnVolumeChanged?.Invoke();
         }
 
         public void SetVolume(float volume)
         {
             if (!IsValid) return;
 
-            audioSource.volume = volume * soundService.BgmVolume * soundService.MasterVolume;
-            OnVolumeChanged?.Invoke();
+            baseVolume = volume;
+            ApplyVolume();
         }
 
         public void SetVolume(float volume, SoundFadingOptions crossFadingOptions)
         {
             if (!IsValid) return;
+        }
 
-            volumeFadeTimer = 0f;
-            volumeFadeDuration = crossFadingOptions.FadeDuration;
-            startVolume = audioSource.volume;
-            endVolume = volume * soundService.BgmVolume * soundService.MasterVolume;
+        public void SetVolumeFadeMultiplier(float multiplier)
+        {
+            if (!IsValid) return;
+
+            volumeFadeMultiplier = multiplier;
+            ApplyVolume();
         }
 
         public void SetPitch(float pitch)
         {
             if (!IsValid) return;
 
-            audioSource.pitch = pitch;
-            OnPitchChanged?.Invoke();
+            basePitch = pitch;
+            ApplyPitch();
         }
 
         public void SetPitch(float pitch, SoundFadingOptions crossFadingOptions)
         {
             if (!IsValid) return;
+        }
 
-            pitchFadeTimer = 0f;
-            pitchFadeDuration = crossFadingOptions.FadeDuration;
-            startPitch = audioSource.pitch;
-            endPitch = pitch;
+        public void SetPitchFadeMultiplier(float multiplier)
+        {
+            if (!IsValid) return;
+
+            pitchFadeMultiplier = multiplier;
+            ApplyPitch();
         }
 
         public AudioSource Release()
@@ -167,6 +122,20 @@ namespace Early.SoundManager
             }
             IsValid = false;
             soundService.OnTicked -= Tick;
+        }
+#endregion
+
+#region Private Helper Methods
+        private void ApplyVolume()
+        {
+            audioSource.volume = baseVolume * volumeFadeMultiplier * soundService.BgmVolume * soundService.MasterVolume;
+            OnVolumeChanged?.Invoke();
+        }
+
+        private void ApplyPitch()
+        {
+            audioSource.pitch = basePitch * pitchFadeMultiplier;
+            OnPitchChanged?.Invoke();
         }
 #endregion
     }
