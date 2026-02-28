@@ -12,7 +12,7 @@ namespace Early.SoundManager
         private readonly ObjectPool<AudioSource> availableAudioSources;
         private readonly List<ISeHandle> activeSeHandles = new ();
         private readonly Dictionary<string, AudioClip> audioClipCache = new ();
-        private readonly Dictionary<ISoundHandle, ISoundFadingStatus> fadingTimers = new ();
+        private readonly Dictionary<ISoundHandle, SoundFadingStatus> fadingTimers = new ();
         private readonly List<ISoundHandle> handlesToRemove = new ();
         private IBgmHandle currentBgm;
         private IBgmHandle nextBgm;
@@ -192,11 +192,11 @@ namespace Early.SoundManager
             return SwitchBgm(key, SoundOptions.Default, fadingOptions);
         }
 
-        public IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions crossFadingOptions)
+        public IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions fadingOptions)
         {
             if (TryGetAudioClipByKey(key, out var clip))
             {
-                return SwitchBgm(clip, options, crossFadingOptions);
+                return SwitchBgm(clip, options, fadingOptions);
             }
             else
             {
@@ -222,7 +222,7 @@ namespace Early.SoundManager
             OnBgmVolumeChanged?.Invoke();
         }
 
-        void ISoundService.SetFadingTimer(ISoundHandle handle, ISoundFadingStatus fadingStatus)
+        void ISoundService.SetFadingTimer(ISoundHandle handle, SoundFadingStatus fadingStatus)
         {
             if (handle != null && handle.IsValid)
             {
@@ -245,6 +245,7 @@ namespace Early.SoundManager
             availableAudioSources.Clear();
             audioClipCache.Clear();
             fadingTimers.Clear();
+            activeSeHandles.Clear();
         }
 #endregion
 
@@ -277,8 +278,8 @@ namespace Early.SoundManager
 
         private AudioSource SetAudioSourceParams(ISoundHandle handle, AudioSource audioSource, SoundOptions options)
         {
-            handle.SetVolume(options.Volume);
-            handle.SetPitch(options.Pitch);
+            handle.SetVolume(options.BaseVolume);
+            handle.SetPitch(options.BasePitch);
             audioSource.spatialBlend = options.Spatialize ? 1.0f : 0.0f;
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
@@ -307,14 +308,14 @@ namespace Early.SoundManager
             return handle;
         }
 
-        private IBgmHandle SwitchBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options, SoundFadingOptions crossFadingOptions)
+        private IBgmHandle SwitchBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options, SoundFadingOptions fadingOptions)
         {
             nextBgm = new BgmHandle(audioSource, this);
-            fadingTimers[nextBgm] = new SoundFadingStatus(SoundFadingType.Volume, crossFadingOptions.FadeDuration, 0, options.Volume, null);
+            fadingTimers[nextBgm] = new SoundFadingStatus(SoundFadingType.Volume, fadingOptions.FadeDuration, 0, options.BaseVolume, null);
             fadingTimers[currentBgm] = new SoundFadingStatus(
                 SoundFadingType.Volume,
-                crossFadingOptions.FadeDuration,
-                currentBgm.Volume,
+                fadingOptions.FadeDuration,
+                currentBgm.BaseVolume,
                 0,
                 () =>
                 {
@@ -339,9 +340,11 @@ namespace Early.SoundManager
         {
             for (int i = activeSeHandles.Count - 1; i >= 0; i--)
             {
-                if (!activeSeHandles[i].IsPlaying)
+                var handle = activeSeHandles[i];
+                if (fadingTimers.ContainsKey(handle) || handle.IsPaused) continue; 
+                if (!handle.IsPlaying)
                 {
-                    activeSeHandles[i].Stop();
+                    handle.Stop();
                 }
             }
         }        

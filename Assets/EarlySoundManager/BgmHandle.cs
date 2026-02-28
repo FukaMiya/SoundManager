@@ -6,9 +6,6 @@ namespace Early.SoundManager
     {
         private readonly AudioSource audioSource;
         private readonly ISoundService soundService;
-
-        public float BaseVolume { get; private set; } = 1f;
-        public float BasePitch { get; private set; } = 1f;
         private float previousBaseVolume = 1f;
 
         public BgmHandle()
@@ -27,7 +24,11 @@ namespace Early.SoundManager
 #region IBgmHandle Implementation
         public float Volume => audioSource != null ? audioSource.volume : 0f;
         public float Pitch => audioSource != null ? audioSource.pitch : 0f;
+        public float BaseVolume { get; private set; } = 1f;
+        public float BasePitch { get; private set; } = 1f;
+        public float Time => audioSource != null ? audioSource.time : 0f;
         public bool IsPlaying => audioSource != null && audioSource.isPlaying;
+        public bool IsPaused { get; private set; } = false;
         public bool IsValid { get; private set; } = false;
         public event System.Action OnPaused;
         public event System.Action OnResumed;
@@ -39,6 +40,7 @@ namespace Early.SoundManager
             if (!IsValid || !IsPlaying) return;
 
             audioSource.Pause();
+            IsPaused = true;
             OnPaused?.Invoke();
         }
 
@@ -61,6 +63,7 @@ namespace Early.SoundManager
             if (!IsValid || IsPlaying) return;
 
             audioSource.UnPause();
+            IsPaused = false;
             OnResumed?.Invoke();
         }
 
@@ -131,6 +134,8 @@ namespace Early.SoundManager
                 audioSource.clip = null;
             }
             IsValid = false;
+            soundService.OnMasterVolumeChanged -= ApplyVolume;
+            soundService.OnBgmVolumeChanged -= ApplyVolume;
         }
 #endregion
 

@@ -29,14 +29,18 @@ namespace Early.SoundManager
         void SetMasterVolume(float volume);
         void SetSeVolume(float volume);
         void SetBgmVolume(float volume);
-        internal void SetFadingTimer(ISoundHandle handle, ISoundFadingStatus fadingStatus);
+        internal void SetFadingTimer(ISoundHandle handle, SoundFadingStatus fadingStatus);
     }
 
     public interface ISoundHandle : System.IDisposable
     {
         float Volume { get; }
         float Pitch { get; }
+        float BaseVolume { get; }
+        float BasePitch { get; }
+        float Time { get; }
         bool IsPlaying { get; }
+        bool IsPaused { get; }
         bool IsValid { get; }
         event System.Action OnPaused;
         event System.Action OnResumed;

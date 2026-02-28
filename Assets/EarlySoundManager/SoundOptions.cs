@@ -4,8 +4,8 @@ namespace Early.SoundManager
 {
     public readonly struct SoundOptions
     {
-        public readonly float Volume;
-        public readonly float Pitch;
+        public readonly float BaseVolume;
+        public readonly float BasePitch;
         public readonly bool Spatialize;
         public readonly Vector3 Position;
         public readonly AudioRolloffMode RolloffMode;
@@ -22,8 +22,8 @@ namespace Early.SoundManager
             float maxDistance = 500.0f
         )
         {
-            Volume = volume;
-            Pitch = pitch;
+            BaseVolume = volume;
+            BasePitch = pitch;
             Spatialize = spatialize;
             Position = position;
             RolloffMode = rolloffMode;
@@ -73,7 +73,7 @@ namespace Early.SoundManager
         {
             return new SoundOptions(
                 volume: volume,
-                pitch: options.Pitch,
+                pitch: options.BasePitch,
                 spatialize: options.Spatialize,
                 position: options.Position,
                 rolloffMode: options.RolloffMode,
@@ -98,7 +98,7 @@ namespace Early.SoundManager
         public static SoundOptions WithPitch(this SoundOptions options, float pitch)
         {
             return new SoundOptions(
-                volume: options.Volume,
+                volume: options.BaseVolume,
                 pitch: pitch,
                 spatialize: options.Spatialize,
                 position: options.Position,

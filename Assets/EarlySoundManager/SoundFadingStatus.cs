@@ -1,22 +1,12 @@
 namespace Early.SoundManager
 {
-    internal interface ISoundFadingStatus
-    {
-        SoundFadingType FadingType { get; set; }
-        float Timer { get; set; }
-        float Duration { get; set; }
-        float StartValue { get; set; }
-        float EndValue { get; set; }
-        System.Action OnCompleted { get; set; }
-    }
-
     internal enum SoundFadingType
     {
         Volume,
         Pitch
     }
 
-    internal sealed class SoundFadingStatus : ISoundFadingStatus
+    internal sealed class SoundFadingStatus
     {
         public SoundFadingType FadingType { get; set; }
         public float Timer { get; set; }
