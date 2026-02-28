@@ -57,6 +57,13 @@ namespace Early.SoundManager
         public void Stop(SoundFadingOptions fadingOptions)
         {
             if (!IsValid) return;
+
+            soundService.SetFadingTimer(this, new SoundFadingStatus()
+            {
+                Timer = 0f,
+                Duration = fadingOptions.FadeDuration,
+                IsFadingIn = false
+            });
         }
 
         public void Pause()
@@ -70,6 +77,13 @@ namespace Early.SoundManager
         public void Pause(SoundFadingOptions fadingOptions)
         {
             if (!IsValid || !IsPlaying) return;
+
+            soundService.SetFadingTimer(this, new SoundFadingStatus()
+            {
+                Timer = 0f,
+                Duration = fadingOptions.FadeDuration,
+                IsFadingIn = false
+            });
         }
 
         public void Resume()
@@ -83,6 +97,13 @@ namespace Early.SoundManager
         public void Resume(SoundFadingOptions fadingOptions)
         {
             if (!IsValid || IsPlaying) return;
+
+            soundService.SetFadingTimer(this, new SoundFadingStatus()
+            {
+                Timer = 0f,
+                Duration = fadingOptions.FadeDuration,
+                IsFadingIn = true
+            });
         }
 
         public void SetVolume(float volume)
@@ -93,7 +114,7 @@ namespace Early.SoundManager
             ApplyVolume();
         }
 
-        public void SetVolume(float volume, SoundFadingOptions crossFadingOptions)
+        public void SetVolume(float volume, SoundFadingOptions fadingOptions)
         {
             if (!IsValid) return;
         }
@@ -114,7 +135,7 @@ namespace Early.SoundManager
             ApplyPitch();
         }
 
-        public void SetPitch(float pitch, SoundFadingOptions crossFadingOptions)
+        public void SetPitch(float pitch, SoundFadingOptions fadingOptions)
         {
             if (!IsValid) return;
         }
