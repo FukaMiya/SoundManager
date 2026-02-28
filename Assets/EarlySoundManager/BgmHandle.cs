@@ -20,6 +20,8 @@ namespace Early.SoundManager
             this.audioSource = audioSource;
             this.soundService = soundService;
             soundService.OnTicked += Tick;
+            soundService.OnMasterVolumeChanged += ApplyVolume;
+            soundService.OnBgmVolumeChanged += ApplyVolume;
             IsValid = true;
         }
 

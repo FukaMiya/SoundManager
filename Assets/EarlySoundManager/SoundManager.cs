@@ -52,11 +52,14 @@ namespace Early.SoundManager
         }
 
 #region ISoundService Implementation
-        public float MasterVolume { get; set; } = 1.0f;
-        public float SeVolume { get; set; } = 1.0f;
-        public float BgmVolume { get; set; } = 1.0f;
+        public float MasterVolume { get; private set; } = 1.0f;
+        public float SeVolume { get; private set; } = 1.0f;
+        public float BgmVolume { get; private set; } = 1.0f;
 
         public event System.Action OnTicked;
+        public event System.Action OnMasterVolumeChanged;
+        public event System.Action OnSeVolumeChanged;
+        public event System.Action OnBgmVolumeChanged;
 
         public ISeHandle PlaySe(AudioClip clip)
         {
@@ -194,6 +197,24 @@ namespace Early.SoundManager
             {
                 return new BgmHandle();
             }
+        }
+
+        public void SetMasterVolume(float volume)
+        {
+            MasterVolume = volume;
+            OnMasterVolumeChanged?.Invoke();
+        }
+
+        public void SetSeVolume(float volume)
+        {
+            SeVolume = volume;
+            OnSeVolumeChanged?.Invoke();
+        }
+
+        public void SetBgmVolume(float volume)
+        {
+            BgmVolume = volume;
+            OnBgmVolumeChanged?.Invoke();
         }
 
         void ISoundService.SetFadingTimer(ISoundHandle handle, ISoundFadingStatus fadingStatus)

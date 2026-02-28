@@ -74,6 +74,15 @@ public class Demo : MonoBehaviour
         soundService.SwitchBgm("Bgm2", defaultSoundOptions.WithVolumeAndPitch(0.5f, 1f));
     }
 
+    public void ApplyVolumeSettings(float masterVolume, float seVolume, float bgmVolume)
+    {
+        if (!CheckIsPlaying()) return;
+
+        soundService.SetMasterVolume(masterVolume);
+        soundService.SetSeVolume(seVolume);
+        soundService.SetBgmVolume(bgmVolume);
+    }
+
     private bool CheckIsPlaying()
     {
         if (Application.isPlaying)
@@ -95,6 +104,9 @@ public class DemoEditor : Editor
     private Demo demo;
     private float fadeDuration1 = 1f;
     private float fadeDuration2 = 1f;
+    private float masterVolume = 1f;
+    private float seVolume = 1f;
+    private float bgmVolume = 1f;
 
     private void OnEnable()
     {
@@ -137,6 +149,15 @@ public class DemoEditor : Editor
         if (GUILayout.Button("Switch Bgm2 (no fade)"))
         {
             demo.SwitchBgm2();
+        }
+
+        GUILayout.Space(10);
+        masterVolume = EditorGUILayout.Slider("Master Volume", masterVolume, 0f, 1f);
+        seVolume = EditorGUILayout.Slider("SE Volume", seVolume, 0f, 1f);
+        bgmVolume = EditorGUILayout.Slider("BGM Volume", bgmVolume, 0f, 1f);
+        if (GUILayout.Button("Apply Volume Settings"))
+        {
+            demo.ApplyVolumeSettings(masterVolume, seVolume, bgmVolume);
         }
     }
 }

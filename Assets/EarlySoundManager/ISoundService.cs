@@ -4,10 +4,13 @@ namespace Early.SoundManager
 {
     public interface ISoundService : System.IDisposable
     {
-        float MasterVolume { get; set; }
-        float BgmVolume { get; set; }
-        float SeVolume { get; set; }
+        float MasterVolume { get; }
+        float BgmVolume { get; }
+        float SeVolume { get; }
         event System.Action OnTicked;
+        event System.Action OnMasterVolumeChanged;
+        event System.Action OnSeVolumeChanged;
+        event System.Action OnBgmVolumeChanged;
         ISeHandle PlaySe(AudioClip clip);
         ISeHandle PlaySe(AudioClip clip, SoundOptions options);
         ISeHandle PlaySe(string key);
@@ -24,6 +27,9 @@ namespace Early.SoundManager
         IBgmHandle SwitchBgm(string key, SoundOptions options);
         IBgmHandle SwitchBgm(string key, SoundFadingOptions fadingOptions);
         IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions fadingOptions);
+        void SetMasterVolume(float volume);
+        void SetSeVolume(float volume);
+        void SetBgmVolume(float volume);
         internal void SetFadingTimer(ISoundHandle handle, ISoundFadingStatus fadingStatus);
     }
 
