@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Early.SoundManager
 {
-    internal sealed class SeHandle : ISeHandle
+    internal sealed class SeHandle : ISeHandle, ISoundPositionUpdatable
     {
         private readonly AudioSource audioSource;
         private readonly ISoundService soundService;
@@ -160,6 +160,16 @@ namespace Early.SoundManager
             IsValid = false;
             soundService.OnMasterVolumeChanged -= ApplyVolume;
             soundService.OnSeVolumeChanged -= ApplyVolume;
+        }
+#endregion
+
+#region ISoundPositionUpdatable Implementation
+        public void UpdatePosition(Vector3 position)
+        {
+            if (audioSource != null)
+            {
+                audioSource.transform.position = position;
+            }
         }
 #endregion
 

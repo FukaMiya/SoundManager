@@ -67,4 +67,9 @@ namespace Early.SoundManager
     public interface IBgmHandle : ISoundHandle
     {
     }
+
+    public interface ISoundPositionUpdatable
+    {
+        void UpdatePosition(Vector3 position);
+    }
 }

@@ -13,6 +13,7 @@ namespace Early.SoundManager
         private readonly List<ISeHandle> activeSeHandles = new ();
         private readonly Dictionary<string, AudioClip> audioClipCache = new ();
         private readonly Dictionary<ISoundHandle, SoundFadingStatus> fadingTimers = new ();
+        private readonly Dictionary<ISoundHandle, Transform> soundPositionSources = new ();
         private readonly List<ISoundHandle> handlesToRemove = new ();
         private readonly Dictionary<BgmTrackId, BgmTrackState> bgmTracks = new ();
 
@@ -37,6 +38,7 @@ namespace Early.SoundManager
         {
             CheckSeCompletion();
             FadeHandles();
+            MoveSoundPositions();
         }
 
 #region ISoundService Implementation
@@ -237,6 +239,7 @@ namespace Early.SoundManager
             }
             audioClipCache.Clear();
             fadingTimers.Clear();
+            soundPositionSources.Clear();
             foreach (var handle in activeSeHandles)
             {
                 handle.Dispose();
@@ -280,7 +283,11 @@ namespace Early.SoundManager
             audioSource.rolloffMode = options.RolloffMode;
             audioSource.minDistance = options.MinDistance;
             audioSource.maxDistance = options.MaxDistance;
-            audioSource.transform.position = options.PositionSource != null ? options.PositionSource.position + options.Position : options.Position;
+            audioSource.transform.position = options.Position;
+            if (options.PositionSource != null)
+            {
+                soundPositionSources[handle] = options.PositionSource;
+            }
             return audioSource;
         }
 
@@ -306,7 +313,6 @@ namespace Early.SoundManager
             audioSource.clip = clip;
             SetAudioSourceParams(handle, audioSource, options);
             audioSource.Play();
-            bgmTracks[trackId] = new BgmTrackState(handle);
             return handle;
         }
 
@@ -383,13 +389,36 @@ namespace Early.SoundManager
             }
         }
 
+        private void MoveSoundPositions()
+        {
+            handlesToRemove.Clear();
+            foreach (var (handle, sourceTransform) in soundPositionSources)
+            {
+                if (handle == null || !handle.IsValid || sourceTransform == null)
+                {
+                    handlesToRemove.Add(handle);
+                    continue;
+                }
+
+                if (handle is ISoundPositionUpdatable updatable)
+                {
+                    updatable.UpdatePosition(sourceTransform.position);
+                }
+            }
+
+            foreach (var handle in handlesToRemove)
+            {
+                soundPositionSources.Remove(handle);
+            }
+        }
+
         private void SetupSoundRegistory(SoundRegistory soundRegistory)
         {
             if (soundRegistory == null)
             {
                 return;
             }
-            if (soundRegistory == null)
+            if (soundRegistory.SoundEntries.Length == 0)
             {
                 Debug.LogWarning("Sound registory is empty.");
                 return;
