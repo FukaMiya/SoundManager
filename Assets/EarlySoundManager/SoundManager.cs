@@ -14,8 +14,7 @@ namespace Early.SoundManager
         private readonly Dictionary<string, AudioClip> audioClipCache = new ();
         private readonly Dictionary<ISoundHandle, SoundFadingStatus> fadingTimers = new ();
         private readonly List<ISoundHandle> handlesToRemove = new ();
-        private IBgmHandle currentBgm;
-        private IBgmHandle nextBgm;
+        private readonly Dictionary<BgmTrackId, BgmTrackState> bgmTracks = new ();
 
         public SoundManager() : this(null) { }
         public SoundManager(SoundRegistory soundRegistory)
@@ -83,32 +82,34 @@ namespace Early.SoundManager
             }
         }
 
-        public IBgmHandle PlayBgm(AudioClip clip)
+        public IBgmHandle PlayBgm(AudioClip clip, BgmTrackId trackId = default)
         {
-            return PlayBgm(clip, SoundOptions.Default);
+            return PlayBgm(clip, SoundOptions.Default, trackId);
         }
 
-        public IBgmHandle PlayBgm(AudioClip clip, SoundOptions options)
+        public IBgmHandle PlayBgm(AudioClip clip, SoundOptions options, BgmTrackId trackId = default)
         {
-            if (currentBgm != null && currentBgm.IsValid)
+            trackId = ResolveTrackId(trackId);
+            if (bgmTracks.TryGetValue(trackId, out var trackState) && trackState.Current != null && trackState.Current.IsValid)
             {
-                return SwitchBgm(clip, options);
+                return SwitchBgm(clip, options, trackId);
             }
 
-            currentBgm = PlayBgmInternal(GetAvailableAudioSource(), clip, options);
-            return currentBgm;
+            trackState = new BgmTrackState(PlayBgmInternal(GetAvailableAudioSource(), clip, options, trackId));
+            bgmTracks[trackId] = trackState;
+            return trackState.Current;
         }
 
-        public IBgmHandle PlayBgm(string key)
+        public IBgmHandle PlayBgm(string key, BgmTrackId trackId = default)
         {
-            return PlayBgm(key, SoundOptions.Default);
+            return PlayBgm(key, SoundOptions.Default, trackId);
         }
 
-        public IBgmHandle PlayBgm(string key, SoundOptions options)
+        public IBgmHandle PlayBgm(string key, SoundOptions options, BgmTrackId trackId = default)
         {
             if (TryGetAudioClipByKey(key, out var clip))
             {
-                return PlayBgm(clip, options);
+                return PlayBgm(clip, options, trackId);
             }
             else
             {
@@ -116,58 +117,61 @@ namespace Early.SoundManager
             }
         }
 
-        public IBgmHandle SwitchBgm(AudioClip clip)
+        public IBgmHandle SwitchBgm(AudioClip clip, BgmTrackId trackId = default)
         {
-            return SwitchBgm(clip, SoundOptions.Default);
+            return SwitchBgm(clip, SoundOptions.Default, trackId);
         }
 
-        public IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options)
+        public IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options, BgmTrackId trackId = default)
         {
-            if (currentBgm != null && currentBgm.IsValid)
+            trackId = ResolveTrackId(trackId);
+            if (bgmTracks.TryGetValue(trackId, out var trackState) && trackState.Current != null && trackState.Current.IsValid)
             {
-                availableAudioSources.Release(currentBgm.Release());
+                availableAudioSources.Release(trackState.Current.Release());
+                trackState.Current = null;
             }
 
-            return PlayBgm(clip, options);
+            return PlayBgm(clip, options, trackId);
         }
 
-        public IBgmHandle SwitchBgm(AudioClip clip, SoundFadingOptions fadingOptions)
+        public IBgmHandle SwitchBgm(AudioClip clip, SoundFadingOptions fadingOptions, BgmTrackId trackId = default)
         {
-            return SwitchBgm(clip, SoundOptions.Default, fadingOptions);
+            return SwitchBgm(clip, SoundOptions.Default, fadingOptions, trackId);
         }
 
-        public IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options, SoundFadingOptions fadingOptions)
+        public IBgmHandle SwitchBgm(AudioClip clip, SoundOptions options, SoundFadingOptions fadingOptions, BgmTrackId trackId = default)
         {
-            if (currentBgm == null || !currentBgm.IsValid || fadingOptions.FadeDuration <= 0f)
+            trackId = ResolveTrackId(trackId);
+            if (!bgmTracks.TryGetValue(trackId, out var trackState) || trackState.Current == null || !trackState.Current.IsValid || fadingOptions.FadeDuration <= 0f)
             {
-                return PlayBgm(clip, options);
+                return PlayBgm(clip, options, trackId);
             }
 
-            if (fadingTimers.TryGetValue(currentBgm, out var _))
+            if (fadingTimers.TryGetValue(trackState.Current, out var _))
             {
-                fadingTimers.Remove(currentBgm);
-                if (nextBgm != null)
+                fadingTimers.Remove(trackState.Current);
+                if (trackState.Next != null)
                 {
-                    fadingTimers.Remove(nextBgm);
+                    fadingTimers.Remove(trackState.Next);
                 }
-                availableAudioSources.Release(currentBgm.Release());
-                currentBgm = nextBgm;
-                nextBgm = null;
+                availableAudioSources.Release(trackState.Current.Release());
+                trackState.Current = trackState.Next;
+                trackState.Next = null;
             }
 
-            return SwitchBgmInternal(GetAvailableAudioSource(), clip, options, fadingOptions);
+            return SwitchBgmInternal(GetAvailableAudioSource(), clip, options, fadingOptions, trackState);
         }
 
-        public IBgmHandle SwitchBgm(string key)
+        public IBgmHandle SwitchBgm(string key, BgmTrackId trackId = default)
         {
-            return SwitchBgm(key, SoundOptions.Default);
+            return SwitchBgm(key, SoundOptions.Default, trackId);
         }
 
-        public IBgmHandle SwitchBgm(string key, SoundOptions options)
+        public IBgmHandle SwitchBgm(string key, SoundOptions options, BgmTrackId trackId = default)
         {
             if (TryGetAudioClipByKey(key, out var clip))
             {
-                return SwitchBgm(clip, options);
+                return SwitchBgm(clip, options, trackId);
             }
             else
             {
@@ -175,16 +179,16 @@ namespace Early.SoundManager
             }
         }
 
-        public IBgmHandle SwitchBgm(string key, SoundFadingOptions fadingOptions)
+        public IBgmHandle SwitchBgm(string key, SoundFadingOptions fadingOptions, BgmTrackId trackId = default)
         {
-            return SwitchBgm(key, SoundOptions.Default, fadingOptions);
+            return SwitchBgm(key, SoundOptions.Default, fadingOptions, trackId);
         }
 
-        public IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions fadingOptions)
+        public IBgmHandle SwitchBgm(string key, SoundOptions options, SoundFadingOptions fadingOptions, BgmTrackId trackId = default)
         {
             if (TryGetAudioClipByKey(key, out var clip))
             {
-                return SwitchBgm(clip, options, fadingOptions);
+                return SwitchBgm(clip, options, fadingOptions, trackId);
             }
             else
             {
@@ -220,15 +224,16 @@ namespace Early.SoundManager
 
         public void Dispose()
         {
-            if (currentBgm != null && currentBgm.IsValid)
+            foreach (var trackState in bgmTracks.Values)
             {
-                availableAudioSources.Release(currentBgm.Release());
-                currentBgm = null;
-            }
-            if (nextBgm != null && nextBgm.IsValid)
-            {
-                availableAudioSources.Release(nextBgm.Release());
-                nextBgm = null;
+                if (trackState.Current != null && trackState.Current.IsValid)
+                {
+                    availableAudioSources.Release(trackState.Current.Release());
+                }
+                if (trackState.Next != null && trackState.Next.IsValid)
+                {
+                    availableAudioSources.Release(trackState.Next.Release());
+                }
             }
             audioClipCache.Clear();
             fadingTimers.Clear();
@@ -278,6 +283,11 @@ namespace Early.SoundManager
             audioSource.transform.position = options.PositionSource != null ? options.PositionSource.position + options.Position : options.Position;
             return audioSource;
         }
+
+        private BgmTrackId ResolveTrackId(BgmTrackId trackId)
+        {
+            return trackId.Equals(default) ? BgmTrackId.Main : trackId;
+        }
     
         private ISeHandle PlaySeInternal(AudioSource audioSource, AudioClip clip, SoundOptions options)
         {
@@ -289,42 +299,43 @@ namespace Early.SoundManager
             return handle;
         }
 
-        private IBgmHandle PlayBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options)
+        private IBgmHandle PlayBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options, BgmTrackId trackId)
         {
             var handle = new BgmHandle(audioSource, this);
             audioSource.loop = true;
             audioSource.clip = clip;
             SetAudioSourceParams(handle, audioSource, options);
             audioSource.Play();
+            bgmTracks[trackId] = new BgmTrackState(handle);
             return handle;
         }
 
-        private IBgmHandle SwitchBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options, SoundFadingOptions fadingOptions)
+        private IBgmHandle SwitchBgmInternal(AudioSource audioSource, AudioClip clip, SoundOptions options, SoundFadingOptions fadingOptions, BgmTrackState trackState)
         {
-            nextBgm = new BgmHandle(audioSource, this);
-            fadingTimers[nextBgm] = new SoundFadingStatus(SoundFadingType.Volume, fadingOptions.FadeDuration, 0, options.BaseVolume, null);
-            fadingTimers[currentBgm] = new SoundFadingStatus(
+            trackState.Next = new BgmHandle(audioSource, this);
+            fadingTimers[trackState.Next] = new SoundFadingStatus(SoundFadingType.Volume, fadingOptions.FadeDuration, 0, options.BaseVolume, null);
+            fadingTimers[trackState.Current] = new SoundFadingStatus(
                 SoundFadingType.Volume,
                 fadingOptions.FadeDuration,
-                currentBgm.BaseVolume,
+                trackState.Current.BaseVolume,
                 0,
                 () =>
                 {
-                    if (currentBgm != null)
+                    if (trackState.Current != null)
                     {
-                        availableAudioSources.Release(currentBgm.Release());
+                        availableAudioSources.Release(trackState.Current.Release());
                     }
-                    currentBgm = nextBgm;
-                    nextBgm = null;
+                    trackState.Current = trackState.Next;
+                    trackState.Next = null;
                 }
             );
 
             audioSource.loop = true;
             audioSource.clip = clip;
-            SetAudioSourceParams(nextBgm, audioSource, options);
-            nextBgm.SetVolume(0);
+            SetAudioSourceParams(trackState.Next, audioSource, options);
+            trackState.Next.SetVolume(0);
             audioSource.Play();
-            return nextBgm;
+            return trackState.Next;
         }
 
         private void CheckSeCompletion()
