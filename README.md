@@ -1,87 +1,206 @@
 # Early Sound Manager
+
 ## Overview
+
 - オブジェクトプールによる最適化
-- BGMのクロスフェード
-- SpatialSound対応
-- マスター音量、SE音量、BGM音量をそれぞれ管理可能
-- ISoundHandleによる個別操作
-- ScriptableObjectによる文字列キー管理
-- VContainerでのDI可能
+- BGMのクロスフェード（複数トラック対応）
+- Spatial Sound 対応
+- マスター音量・SE音量・BGM音量をそれぞれ管理可能
+- `ISoundHandle` による個別操作（音量・ピッチのフェード対応）
+- `ScriptableObject` による文字列キー管理
+- VContainer での DI 可能（`ITickable` 互換）
+
+---
 
 ## Usage
+
 ### Initialize
-プレイヤーループに組み込むためにUpdate()等で呼び出す必要があります。VContainerを導入している場合、VContainer.Unity.ITickableと互換性があります。
+
+`Tick()` をプレイヤーループに組み込む必要があります。VContainer を導入している場合、`VContainer.Unity.ITickable` と互換性があります。
+
 ```csharp
 public SoundRegistory soundRegistory;
-private SoundManager soundService;
+private SoundManager soundManager;
 
 void Start()
 {
-    soundService = new SoundManager(soundRegistory);
+    soundManager = new SoundManager(soundRegistory);
 }
 
 void Update()
 {
-    soundService.Tick();
+    soundManager.Tick();
 }
 ```
 
-### Play SE
-SEは再生終了後、自動的に回収されます。
+`SoundRegistory` を使用しない場合は引数なしで初期化できます。
+
 ```csharp
-// 再生
-soundService.PlaySe(clip);
-soundService.PlaySe("key");
-soundService.PlaySe("key", soundOptions);
-var handle = soundService.PlaySe("key");
+soundManager = new SoundManager();
+```
+
+---
+
+### Play SE
+
+SE は再生終了後、自動的にプールへ回収されます。
+
+```csharp
+// AudioClip または文字列キーで再生
+soundManager.PlaySe(clip);
+soundManager.PlaySe("key");
+soundManager.PlaySe("key", soundOptions);
 
 // ハンドルによる操作
+var handle = soundManager.PlaySe("key");
 handle.Pause();
+handle.Pause(new SoundFadingOptions(fadeDuration: 0.5f)); // フェードアウトして一時停止
 handle.Resume();
+handle.Resume(new SoundFadingOptions(fadeDuration: 0.5f)); // 再開してフェードイン
 handle.Stop();
+handle.Stop(new SoundFadingOptions(fadeDuration: 0.5f));   // フェードアウトして停止
+handle.SetVolume(0.5f);
+handle.SetVolume(0.5f, new SoundFadingOptions(fadeDuration: 1.0f)); // フェードで音量変更
+handle.SetPitch(1.2f);
+handle.SetPitch(1.2f, new SoundFadingOptions(fadeDuration: 1.0f));  // フェードでピッチ変更
 ```
+
+---
 
 ### Play BGM
-BGMは自動的にループします。同時に再生可能な音源は一つですが、クロスフェードによるスムーズな遷移が可能です。
-```csharp
-// 再生
-soundService.PlayBgm(clip);
-var handle = soundService.PlayBgm("key");
 
-// 切り替え
-// SoundFadingOptionsを渡さない場合、即座に切り替わります。
-soundService.SwitchBgm("key");
-soundService.SwitchBgm(
-    "key",
-    new SoundFadingOptions(
-        fadeDuration: 1.0f
-    )
-);
+BGM は自動的にループします。`BgmTrackId` によって複数のトラックを独立して管理できます。デフォルトは `BgmTrackId.Main` です。
+
+```csharp
+// 再生（すでに同トラックで BGM が再生中の場合は SwitchBgm と同じ動作）
+soundManager.PlayBgm(clip);
+soundManager.PlayBgm("key");
+soundManager.PlayBgm("key", soundOptions);
+
+// トラックを指定して再生
+soundManager.PlayBgm("key", BgmTrackId.Ambient);
+
+// 切り替え（即時）
+soundManager.SwitchBgm("key");
+soundManager.SwitchBgm("key", BgmTrackId.Ambient);
+
+// クロスフェードで切り替え
+soundManager.SwitchBgm("key", new SoundFadingOptions(fadeDuration: 1.0f));
+soundManager.SwitchBgm("key", soundOptions, new SoundFadingOptions(fadeDuration: 1.0f));
+soundManager.SwitchBgm("key", new SoundFadingOptions(fadeDuration: 1.0f), BgmTrackId.Ambient);
 
 // ハンドルによる操作
-// BGMは完全に停止することはできません。一時停止するか、別のBGMに切り替える必要があります。
-var handle = soundService.PlayBgm("key");
+var handle = soundManager.PlayBgm("key");
 handle.SetVolume(0.5f);
+handle.SetVolume(0.5f, new SoundFadingOptions(fadeDuration: 1.0f));
 handle.Pause();
+handle.Pause(new SoundFadingOptions(fadeDuration: 0.5f));
 handle.Resume();
+handle.Resume(new SoundFadingOptions(fadeDuration: 0.5f));
 ```
 
+> BGM を完全に停止させることはできません。一時停止するか、別の BGM に切り替えてください。
+
+---
+
+### Volume Management
+
+マスター・SE・BGM それぞれの音量を個別に設定できます。各ハンドルの実際の音量は `BaseVolume × カテゴリ音量 × MasterVolume` で計算されます。
+
+```csharp
+soundManager.SetMasterVolume(0.8f);
+soundManager.SetSeVolume(0.5f);
+soundManager.SetBgmVolume(0.7f);
+```
+
+---
+
 ### Sound Options
-再生時に設定可能なパラメータです。
-- `(float) Volume`
-- `(float) Pitch`
-- `(bool) Spatialize`
-- `(Vector3) Position`
-- `(AudioRolloffMode) RolloffMode`
-- `(float) MinDistance`
-- `(float) MaxDistance`
 
-`SerializableSoundOptions`によるシリアライズが可能です。
+再生時に指定できるパラメータです。
 
-### Sound Fade Options
-Bgmのクロスフェード設定です。`FadeDuration`を設定できます。
-CancellationTokenを渡すことができますが、現状フェードのキャンセルはできません。
-`SerializableSoundFadeOptions`によるシリアライズが可能です。
+| プロパティ | 型 | デフォルト | 説明 |
+|---|---|---|---|
+| `BaseVolume` | `float` | `1.0` | 基本音量 |
+| `BasePitch` | `float` | `1.0` | 基本ピッチ |
+| `Spatialize` | `bool` | `false` | 3D 音響の有効化 |
+| `Position` | `Vector3` | `default` | 初期再生位置 |
+| `PositionSource` | `Transform` | `null` | 追従する Transform |
+| `RolloffMode` | `AudioRolloffMode` | `Logarithmic` | 減衰モード |
+| `MinDistance` | `float` | `1.0` | 最小距離 |
+| `MaxDistance` | `float` | `500.0` | 最大距離 |
+
+拡張メソッドによる流暢な記述が可能です。
+
+```csharp
+var options = SoundOptions.Default
+    .WithVolume(0.8f)
+    .WithPitch(1.2f)
+    .WithSpatialization(true)
+    .WithPosition(transform.position)
+    .WithPositionSource(transform)
+    .WithRolloffMode(AudioRolloffMode.Linear)
+    .WithMinDistance(2.0f)
+    .WithMaxDistance(100.0f);
+```
+
+Inspector でシリアライズする場合は `SerializableSoundOptions` を使用してください。`SoundOptions` との暗黙的な型変換に対応しています。
+
+---
+
+### Sound Fading Options
+
+音量・ピッチのフェードや BGM クロスフェードに使用します。
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `FadeDuration` | `float` | フェードにかける時間（秒） |
+| `CancellationToken` | `CancellationToken` | キャンセルトークン（現状フェードのキャンセルは未対応） |
+
+Inspector でシリアライズする場合は `SerializableSoundFadingOptions` を使用してください。
+
+---
+
+### BGM Tracks
+
+`BgmTrackId` を使って複数の BGM トラックを独立して管理できます。
+
+```csharp
+// 定義済みトラック
+BgmTrackId.Main    // デフォルトトラック
+BgmTrackId.Ambient // アンビエントトラック
+
+// カスタムトラック
+var myTrack = new BgmTrackId("MyCustomTrack");
+soundManager.PlayBgm("key", myTrack);
+```
+
+---
+
+### Sound Registory
+
+`ScriptableObject` でオーディオクリップを文字列キーで管理します。  
+`Assets > Create > SoundManager > SoundRegistory` からアセットを作成し、`key` と `AudioClip` のペアを登録してください。
+
+---
+
+### ISoundHandle Events
+
+ハンドルにはイベントが用意されており、状態変化を検知できます。
+
+```csharp
+var handle = soundManager.PlaySe("key");
+handle.OnPaused        += () => Debug.Log("Paused");
+handle.OnResumed       += () => Debug.Log("Resumed");
+handle.OnVolumeChanged += () => Debug.Log("Volume changed");
+handle.OnPitchChanged  += () => Debug.Log("Pitch changed");
+
+var seHandle = soundManager.PlaySe("key");
+seHandle.OnCompleted   += () => Debug.Log("SE completed");
+```
+
+---
 
 ## License
+
 [MIT License](LICENSE)
