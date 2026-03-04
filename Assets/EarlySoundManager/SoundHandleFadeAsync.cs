@@ -34,6 +34,13 @@ namespace Early.SoundManager
         public static AsyncResult SetPitchAsync(this ISoundHandle handle, float pitch, SoundFadingOptions fadingOptions, CancellationToken cancellationToken = default)
             => HandleAsyncOperation(handle, fadingOptions, cancellationToken, h => true, h => h.SetPitch(pitch), h => h.SetPitch(pitch, fadingOptions));
 
+        public static AsyncResult WaitForCurrentFadeAsync(this ISoundHandle handle, CancelBehaviour cancelBehaviour = CancelBehaviour.Cancel, CancellationToken cancellationToken = default)
+        {
+            if (handle is not IFadeCompletionNotifiable notifiable || !notifiable.IsFading)
+                return GetCompleted();
+            return FadeAsync(notifiable, cancelBehaviour, cancellationToken);
+        }
+
         #endregion
 
         #region Core Logic
@@ -55,13 +62,13 @@ namespace Early.SoundManager
             }
 
             fadeAction(handle);
-            return FadeAsync(handle, fadingOptions, cancellationToken);
+            return handle is IFadeCompletionNotifiable notifiable
+                ? FadeAsync(notifiable, fadingOptions.CancelBehaviour, cancellationToken)
+                : GetCompleted();
         }
 
-        private static AsyncResult FadeAsync(ISoundHandle handle, SoundFadingOptions fadingOptions, CancellationToken cancellationToken)
+        private static AsyncResult FadeAsync(IFadeCompletionNotifiable notifiable, CancelBehaviour cancelBehaviour, CancellationToken cancellationToken)
         {
-            if (!(handle is IFadeCompletionNotifiable notifiable)) return GetCompleted();
-
 #if !UNITASK_SUPPORT && !UNITY_2023_1_OR_NEWER
             var tcs = new TaskCompletionSource<bool>();
 #else
@@ -86,7 +93,7 @@ namespace Early.SoundManager
             {
                 cancellationToken.Register(() =>
                 {
-                    switch (fadingOptions.CancelBehaviour)
+                    switch (cancelBehaviour)
                     {
                         case CancelBehaviour.Cancel:
                             notifiable.OnFadeCompleted -= OnFadeCompleted;

@@ -224,6 +224,8 @@ namespace Early.SoundManager
             }
         }
 
+        bool ISoundService.IsFading(ISoundHandle handle) => fadingTimers.ContainsKey(handle);
+
         void ISoundService.ForceCompleteFading(ISoundHandle handle)
         {
             if (!fadingTimers.TryGetValue(handle, out var status)) return;

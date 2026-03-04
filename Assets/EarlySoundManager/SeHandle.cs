@@ -182,6 +182,7 @@ namespace Early.SoundManager
         }
         void IFadeCompletionNotifiable.NotifyFadeCompleted() => fadeCompleted?.Invoke();
         void IFadeCompletionNotifiable.ForceCompleteFading() => soundService.ForceCompleteFading(this);
+        bool IFadeCompletionNotifiable.IsFading => soundService.IsFading(this);
 #endregion
 
 #region Private Helper Methods

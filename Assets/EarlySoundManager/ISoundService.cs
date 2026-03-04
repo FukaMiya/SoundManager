@@ -31,6 +31,7 @@ namespace Early.SoundManager
         void SetBgmVolume(float volume);
         internal void SetFadingTimer(ISoundHandle handle, SoundFadingStatus fadingStatus);
         internal void ForceCompleteFading(ISoundHandle handle);
+        internal bool IsFading(ISoundHandle handle);
     }
 
     public interface ISoundHandle : System.IDisposable
@@ -79,5 +80,6 @@ namespace Early.SoundManager
         event System.Action OnFadeCompleted;
         void NotifyFadeCompleted();
         void ForceCompleteFading();
+        bool IsFading { get; }
     }
 }
