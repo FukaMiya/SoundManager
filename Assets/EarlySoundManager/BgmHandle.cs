@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Early.SoundManager
 {
-    internal sealed class BgmHandle : IBgmHandle, ISoundPositionUpdatable
+    internal sealed class BgmHandle : IBgmHandle, ISoundPositionUpdatable, IFadeCompletionNotifiable
     {
         private readonly AudioSource audioSource;
         private readonly ISoundService soundService;
@@ -148,6 +148,17 @@ namespace Early.SoundManager
                 audioSource.transform.position = position;
             }
         }
+#endregion
+
+#region IFadeCompletionNotifiable Implementation
+        private event System.Action fadeCompleted;
+        event System.Action IFadeCompletionNotifiable.OnFadeCompleted
+        {
+            add => fadeCompleted += value;
+            remove => fadeCompleted -= value;
+        }
+        void IFadeCompletionNotifiable.NotifyFadeCompleted() => fadeCompleted?.Invoke();
+        void IFadeCompletionNotifiable.ForceCompleteFading() => soundService.ForceCompleteFading(this);
 #endregion
 
 #region Private Helper Methods

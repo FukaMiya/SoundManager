@@ -30,6 +30,7 @@ namespace Early.SoundManager
         void SetSeVolume(float volume);
         void SetBgmVolume(float volume);
         internal void SetFadingTimer(ISoundHandle handle, SoundFadingStatus fadingStatus);
+        internal void ForceCompleteFading(ISoundHandle handle);
     }
 
     public interface ISoundHandle : System.IDisposable
@@ -71,5 +72,12 @@ namespace Early.SoundManager
     public interface ISoundPositionUpdatable
     {
         void UpdatePosition(Vector3 position);
+    }
+
+    internal interface IFadeCompletionNotifiable
+    {
+        event System.Action OnFadeCompleted;
+        void NotifyFadeCompleted();
+        void ForceCompleteFading();
     }
 }

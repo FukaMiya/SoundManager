@@ -224,6 +224,21 @@ namespace Early.SoundManager
             }
         }
 
+        void ISoundService.ForceCompleteFading(ISoundHandle handle)
+        {
+            if (!fadingTimers.TryGetValue(handle, out var status)) return;
+
+            fadingTimers.Remove(handle);
+
+            if (status.FadingType == SoundFadingType.Volume)
+                handle.SetVolume(status.EndValue);
+            else
+                handle.SetPitch(status.EndValue);
+
+            status.OnCompleted?.Invoke();
+            (handle as IFadeCompletionNotifiable)?.NotifyFadeCompleted();
+        }
+
         public void Dispose()
         {
             foreach (var trackState in bgmTracks.Values)
@@ -384,8 +399,10 @@ namespace Early.SoundManager
 
             foreach (var handle in handlesToRemove)
             {
-                fadingTimers[handle].OnCompleted?.Invoke();
+                var status = fadingTimers[handle];
                 fadingTimers.Remove(handle);
+                status.OnCompleted?.Invoke();
+                (handle as IFadeCompletionNotifiable)?.NotifyFadeCompleted();
             }
         }
 
