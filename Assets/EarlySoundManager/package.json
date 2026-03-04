@@ -1,0 +1,9 @@
+{
+  "name": "com.fukamiya.earlysoundmanager",
+  "version": "1.0.0",
+  "displayName": "Early Sound Manager",
+  "description": "SoundManager for Unity.",
+  "author": {
+    "name": "Fuka"
+  }
+}
