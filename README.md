@@ -22,7 +22,7 @@ Unity 向けの軽量オーディオ管理パッケージです。
 **Window > Package Manager > Add package from git URL** から以下の URL を入力してください。
 
 ```
-https://github.com/FukaMiya/SoundManager.git?path=Assets/EarlySoundManager
+https://github.com/FukaMiya/EarlySoundManager.git?path=Assets/EarlySoundManager
 ```
 
 ### 手動インストール
