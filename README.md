@@ -1,14 +1,33 @@
 # Early Sound Manager
 
-## Overview
+Unity 向けの軽量オーディオ管理パッケージです。
 
-- オブジェクトプールによる最適化
-- BGMのクロスフェード（複数トラック対応）
-- Spatial Sound 対応
-- マスター音量・SE音量・BGM音量をそれぞれ管理可能
-- `ISoundHandle` による個別操作（音量・ピッチのフェード対応）
-- `ScriptableObject` による文字列キー管理
-- VContainer での DI 可能（`ITickable` 互換）
+## 機能
+
+- オブジェクトプールによる `AudioSource` 管理
+- BGM クロスフェード（複数トラック独立管理）
+- SE 再生完了後の自動プール回収
+- Spatial Sound（`Transform` 追従による 3D 定位）
+- マスター / BGM / SE カテゴリ別音量管理
+- 音量・ピッチのフェードアニメーション
+- async/await 対応（UniTask / Unity Awaitable / ValueTask）
+- VContainer DI 対応（`ITickable` 互換）
+
+---
+
+## インストール
+
+### Unity Package Manager（推奨）
+
+**Window > Package Manager > Add package from git URL** から以下の URL を入力してください。
+
+```
+https://github.com/FukaMiya/SoundManager.git?path=Assets/EarlySoundManager
+```
+
+### 手動インストール
+
+`Assets/EarlySoundManager` フォルダをプロジェクトの `Assets` 以下にコピーしてください。
 
 ---
 
@@ -103,6 +122,43 @@ handle.Resume(new SoundFadingOptions(fadeDuration: 0.5f));
 
 ---
 
+### Async / Await
+
+SE の再生完了や BGM のフェード完了を async/await で待機できます。UniTask が導入されている場合は UniTask、Unity 2023.1 以降では Awaitable、それ以外では ValueTask が使用されます。
+
+#### SE の再生完了を待機
+
+```csharp
+// PlaySeAsync — 再生完了まで待機
+await soundManager.PlaySeAsync("key");
+await soundManager.PlaySeAsync(clip, cancellationToken);
+
+// await handle — ハンドルを直接 await
+var handle = soundManager.PlaySe("key");
+await handle;
+```
+
+#### SE ハンドルのフェード操作を待機
+
+```csharp
+var handle = soundManager.PlaySe("key");
+await handle.StopAsync(new SoundFadingOptions(fadeDuration: 0.5f));
+await handle.PauseAsync(new SoundFadingOptions(fadeDuration: 0.5f));
+await handle.ResumeAsync(new SoundFadingOptions(fadeDuration: 0.5f));
+await handle.SetVolumeAsync(0f, new SoundFadingOptions(fadeDuration: 1.0f));
+await handle.SetPitchAsync(0.5f, new SoundFadingOptions(fadeDuration: 1.0f));
+```
+
+#### BGM のクロスフェード完了を待機
+
+```csharp
+// SwitchBgmAsync — フェード完了まで待機（result に新しいハンドルが入る）
+await soundManager.SwitchBgmAsync("key", new SoundFadingOptions(fadeDuration: 1.0f), out var result);
+await soundManager.SwitchBgmAsync("key", soundOptions, new SoundFadingOptions(fadeDuration: 1.0f), out var result);
+```
+
+---
+
 ### Volume Management
 
 マスター・SE・BGM それぞれの音量を個別に設定できます。各ハンドルの実際の音量は `BaseVolume × カテゴリ音量 × MasterVolume` で計算されます。
@@ -152,10 +208,18 @@ Inspector でシリアライズする場合は `SerializableSoundOptions` を使
 
 音量・ピッチのフェードや BGM クロスフェードに使用します。
 
-| プロパティ | 型 | 説明 |
-|---|---|---|
-| `FadeDuration` | `float` | フェードにかける時間（秒） |
-| `CancellationToken` | `CancellationToken` | キャンセルトークン（現状フェードのキャンセルは未対応） |
+| プロパティ | 型 | デフォルト | 説明 |
+|---|---|---|---|
+| `FadeDuration` | `float` | — | フェードにかける時間（秒） |
+| `CancelBehaviour` | `CancelBehaviour` | `Cancel` | キャンセル時の挙動 |
+
+`CancelBehaviour` の値:
+
+| 値 | 説明 |
+|---|---|
+| `Cancel` | キャンセル時に待機を中断（例外を投げる） |
+| `Complete` | キャンセル時にフェードを即時完了して正常終了 |
+| `Ignore` | キャンセルを無視してフェードを継続 |
 
 Inspector でシリアライズする場合は `SerializableSoundFadingOptions` を使用してください。
 
@@ -179,7 +243,7 @@ soundManager.PlayBgm("key", myTrack);
 
 ### Sound Registory
 
-`ScriptableObject` でオーディオクリップを文字列キーで管理します。  
+`ScriptableObject` でオーディオクリップを文字列キーで管理します。
 `Assets > Create > SoundManager > SoundRegistory` からアセットを作成し、`key` と `AudioClip` のペアを登録してください。
 
 ---
