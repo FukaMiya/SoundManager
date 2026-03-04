@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using Early.SoundManager;
+using Cysharp.Threading.Tasks;
 
 public sealed class Demo : MonoBehaviour
 {
@@ -17,6 +18,14 @@ public sealed class Demo : MonoBehaviour
     private void Start()
     {
         soundService = new SoundManager(soundRegistory);
+        Debug.Log("Playing SEs sequentially...");
+        UniTask.Void(async () =>
+        {
+            await soundService.PlaySe("Se1", defaultSoundOptions).ToUniTask();
+            await soundService.PlaySe("Se2", defaultSoundOptions).ToUniTask();
+            await soundService.PlaySe("Se1", defaultSoundOptions).ToUniTask();
+            Debug.Log("All SEs completed");
+        });
     }
 
     private void Update()

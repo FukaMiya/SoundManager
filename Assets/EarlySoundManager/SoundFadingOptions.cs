@@ -1,16 +1,14 @@
-using System.Threading;
-
 namespace Early.SoundManager
 {
     public readonly struct SoundFadingOptions
     {
-        public readonly CancellationToken CancellationToken;
         public readonly float FadeDuration;
+        public readonly CancelBehaviour CancelBehaviour;
 
-        public SoundFadingOptions(float fadeDuration, CancellationToken cancellationToken = default)
+        public SoundFadingOptions(float fadeDuration, CancelBehaviour cancelBehaviour = CancelBehaviour.Cancel)
         {
-            CancellationToken = cancellationToken;
             FadeDuration = fadeDuration;
+            CancelBehaviour = cancelBehaviour;
         }
     }
 
@@ -23,5 +21,12 @@ namespace Early.SoundManager
         {
             return new SoundFadingOptions(options.FadeDuration);
         }
+    }
+
+    public enum CancelBehaviour
+    {
+        Cancel,
+        Complete,
+        Ignore
     }
 }
